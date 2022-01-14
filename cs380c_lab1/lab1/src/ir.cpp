@@ -92,34 +92,33 @@ Opcode::Opcode(const string& s) : type_(Opcode::Type::INVALID) {
     if (this->type_ == Opcode::Type::INVALID) {
         std::cerr << s << " is an illegal opcode " << std::endl;
     }
-    #ifdef OPCODE_DEBUG
-        std::cout<<Opcode::opcode_name[this->type_]<<std::endl;
-    #endif
+#ifdef OPCODE_DEBUG
+    std::cout << Opcode::opcode_name[this->type_] << std::endl;
+#endif
 }
 
 Instruction::Instruction(const string& s) {
     //instr 33:   add   global_array_base#32576   GP
     //      1 2   3  4  6                      8  75
-    auto idx1 = s.find_first_of("0123456789"); 
+    auto idx1 = s.find_first_of("0123456789");
     auto idx2 = s.find_first_of(':');
-    auto idx3 = s.find_first_not_of(' ',idx2+1);
-    assert(idx3!=string::npos&&idx3<s.size());
-    assert(idx1!=string::npos&&idx2!=string::npos&&idx1!=idx2);
-    this->label_=atoll(s.substr(idx1,idx2-idx1).c_str());
-    this->op_=Opcode(s);
-    if(Opcode::operand_cnt[op_.type_]>0){
-        auto idx4 = s.find_first_of(' ',idx3);
-        assert(idx4!=string::npos&&idx4<s.size());
-        auto idx6=s.find_first_not_of(' ',idx4);
-        if(Opcode::operand_cnt[op_.type_]==1){
+    auto idx3 = s.find_first_not_of(' ', idx2 + 1);
+    assert(idx3 != string::npos && idx3 < s.size());
+    assert(idx1 != string::npos && idx2 != string::npos && idx1 != idx2);
+    this->label_ = atoll(s.substr(idx1, idx2 - idx1).c_str());
+    this->op_ = Opcode(s);
+    if (Opcode::operand_cnt[op_.type_] > 0) {
+        auto idx4 = s.find_first_of(' ', idx3);
+        assert(idx4 != string::npos && idx4 < s.size());
+        auto idx6 = s.find_first_not_of(' ', idx4);
+        if (Opcode::operand_cnt[op_.type_] == 1) {
             operand_.emplace_back(s.substr(idx6));
-        }
-        else{
-            auto idx8 = s.find_first_of(' ',idx6);
-            operand_.emplace_back(s.substr(idx6,idx8-idx6));
-            auto idx7=s.find_first_not_of(' ',idx8);
-            auto idx5=s.find_last_not_of(' ');
-            operand_.emplace_back(s.substr(idx7,idx5-idx7+1));
+        } else {
+            auto idx8 = s.find_first_of(' ', idx6);
+            operand_.emplace_back(s.substr(idx6, idx8 - idx6));
+            auto idx7 = s.find_first_not_of(' ', idx8);
+            auto idx5 = s.find_last_not_of(' ');
+            operand_.emplace_back(s.substr(idx7, idx5 - idx7 + 1));
         }
     }
 }

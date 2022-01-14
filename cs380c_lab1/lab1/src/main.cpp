@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+
 #include "ir.h"
 int main() {
     /*
@@ -8,14 +9,14 @@ int main() {
         auto operand=Operand(ops[i]);
     }
 */
-    auto i1=Instruction("instr 33:   add   global_array_base#10024   GP");
-    std::cout<<"---"<<std::endl;
-    auto i2=Instruction("instr 49: mul (48) 8");
-    std::cout<<"---"<<std::endl;
-    auto i3=Instruction("	instr 46: add p_base#32560 GP");
-    std::cout<<"---"<<std::endl;
+    auto i1 = Instruction("instr 33:   add   global_array_base#10024   GP");
+    std::cout << "---" << std::endl;
+    auto i2 = Instruction("instr 49: mul (48) 8");
+    std::cout << "---" << std::endl;
+    auto i3 = Instruction("	instr 46: add p_base#32560 GP");
+    std::cout << "---" << std::endl;
     auto i4 = Instruction("instr 43: load (42)");
-    std::cout<<"---"<<std::endl;
+    std::cout << "---" << std::endl;
     auto i5 = Instruction("fadf 231:   nop ");
     return 0;
 }

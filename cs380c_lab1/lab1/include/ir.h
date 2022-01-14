@@ -1,11 +1,11 @@
 #ifndef IR_H
 #define IR_H
 #include <array>
+#include <cassert>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>
-#include <cassert>
-#include <iostream>
 using std::array;
 using std::map;
 using std::string;
@@ -36,7 +36,7 @@ class Operand {
     };
     string variable_name_;
     static const string type_name[];
-    Operand():type_(Operand::Type::INVALID){};
+    Operand() : type_(Operand::Type::INVALID){};
 
     // Read information from a string and build an IR representation
     // Assume that the input string does not contain spaces
@@ -100,7 +100,7 @@ class Opcode {
         [END] = 0};
     static const string opcode_name[];
     Type type_;
-    Opcode() :type_(Opcode::Type::INVALID){};
+    Opcode() : type_(Opcode::Type::INVALID){};
 
     // Read information from a string and build an IR representation
     // Assume that the input string does not contain spaces
@@ -112,7 +112,7 @@ class Instruction {
     Opcode op_;
     vector<Operand> operand_;
     long long label_;
-    Instruction()=delete;
+    Instruction() = delete;
     Instruction(const string& s);
 };
 
