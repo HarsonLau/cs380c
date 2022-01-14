@@ -15,6 +15,7 @@ const string Opcode::opcode_name[Opcode::Type::END + 1] = {
     "blbs",
     "load",
     "store",
+    "move",
     "read",
     "write",
     "wrl",
@@ -77,7 +78,8 @@ Operand::Operand(const string& s) : type_(INVALID), constant_(0), variable_name_
         this->constant_ = atoll(s.c_str());
     }
 #ifdef OPERAND_DEBUG
-    std::cout << s << "  " << Operand::type_name[this->type_] << " " << this->offset_ << "   " << this->variable_name_ << std::endl;
+    std::cout << "  " << "handling operand "<< s;
+    std::cout << "  " << Operand::type_name[this->type_] << " " << this->offset_ << "   " << this->variable_name_ << std::endl;
 #endif
 }
 
@@ -92,7 +94,9 @@ Opcode::Opcode(const string& s) : type_(Opcode::Type::INVALID) {
     if (this->type_ == Opcode::Type::INVALID) {
         std::cerr << s << " is an illegal opcode " << std::endl;
     }
+    assert(s.find( Opcode::opcode_name[this->type_])!=string::npos);
 #ifdef OPCODE_DEBUG
+    std::cout << "handling opcode "<<s<<" ";
     std::cout << Opcode::opcode_name[this->type_] << std::endl;
 #endif
 }
@@ -121,4 +125,5 @@ Instruction::Instruction(const string& s) {
             operand_.emplace_back(s.substr(idx7, idx5 - idx7 + 1));
         }
     }
+    assert(operand_.size()==Opcode::operand_cnt[this->op_.type_]);
 }

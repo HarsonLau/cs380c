@@ -61,6 +61,7 @@ class Opcode {
         BLBS,
         LOAD,
         STORE,
+        MOVE,
         READ,
         WRITE,
         WRL,
@@ -87,7 +88,8 @@ class Opcode {
         [BLBC] = 2,
         [BLBS] = 2,
         [LOAD] = 1,
-        [STORE] = 1,
+        [STORE] = 2,
+        [MOVE]=2,
         [READ] = 0,
         [WRITE] = 1,
         [WRL] = 0,
@@ -95,7 +97,7 @@ class Opcode {
         [ENTER] = 1,
         [ENTRYPC] = 0,
         [CALL] = 1,
-        [RET] = 0,
+        [RET] = 1,
         [NOP] = 0,
         [END] = 0};
     static const string opcode_name[];
