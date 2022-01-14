@@ -1,32 +1,31 @@
 #include "ir.h"
-map<Opcode::Type,string> Opcode::opcode_name={
-   {INVALID, "invalid"},
-    {ADD,"add"},
-    {SUB,"sub"},
-    {MUL,"mul"},
-    {DIV,"div"},
-    {MOD,"mod"},
-    {NEG,"neg"},
-    {CMPEQ,"cmpeq"},
-    {CMPLE,"cmple"},
-    {CMPLT,"cmplt"},
-    {BR,"br"},
-    {BLBC,"blbc"},
-    {BLBS,"blbs"},
-    {LOAD,"load"},
-    {STORE,"store"},
-    {MOVE,"move"},
-    {READ,"read"},
-    {WRITE,"write"},
-    {WRL,"wrl"},
-    {PARAM,"param"},
-    {ENTER,"enter"},
-    {ENTRYPC,"entrypc"},
-    {CALL,"call"},
-    {RET,"ret"},
-    {NOP,"nop"},
-    {END,"end"}
-};
+map<Opcode::Type, string> Opcode::opcode_name = {
+    {INVALID, "invalid"},
+    {ADD, "add"},
+    {SUB, "sub"},
+    {MUL, "mul"},
+    {DIV, "div"},
+    {MOD, "mod"},
+    {NEG, "neg"},
+    {CMPEQ, "cmpeq"},
+    {CMPLE, "cmple"},
+    {CMPLT, "cmplt"},
+    {BR, "br"},
+    {BLBC, "blbc"},
+    {BLBS, "blbs"},
+    {LOAD, "load"},
+    {STORE, "store"},
+    {MOVE, "move"},
+    {READ, "read"},
+    {WRITE, "write"},
+    {WRL, "wrl"},
+    {PARAM, "param"},
+    {ENTER, "enter"},
+    {ENTRYPC, "entrypc"},
+    {CALL, "call"},
+    {RET, "ret"},
+    {NOP, "nop"},
+    {END, "end"}};
 
 map<Opcode::Type, int> Opcode::operand_cnt = {
     {INVALID, 0},
@@ -56,17 +55,17 @@ map<Opcode::Type, int> Opcode::operand_cnt = {
     {NOP, 0},
     {END, 0}};
 
-map<Operand::Type,string> Operand::type_name= {
-    {INVALID,"invalid"},
-    {GP,"GP"},
-    {FP,"FP"},
-    {CONSTANT,"constant"},
-    {ADDR_OFFSET,"address offset"},
-    {FIELD_OFFSET,"field offset"},
-    {LOCAL_VARIABLE,"local variable"},
-    {REG,"register"},
-    {LABEL,"instruction label"},
-    {END,"end"}};
+map<Operand::Type, string> Operand::type_name = {
+    {INVALID, "invalid"},
+    {GP, "GP"},
+    {FP, "FP"},
+    {CONSTANT, "constant"},
+    {ADDR_OFFSET, "address offset"},
+    {FIELD_OFFSET, "field offset"},
+    {LOCAL_VARIABLE, "local variable"},
+    {REG, "register"},
+    {LABEL, "instruction label"},
+    {END, "end"}};
 
 Operand::Operand(const string& s) : type_(INVALID), constant_(0), variable_name_("") {
     if (s.find('(') != string::npos) {
