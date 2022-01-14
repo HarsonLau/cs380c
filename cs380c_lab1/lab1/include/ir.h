@@ -35,7 +35,7 @@ class Operand {
         long long inst_label_;  // 24.Instruction labels
     };
     string variable_name_;
-    static const string type_name[];
+    static map<Operand::Type,string> type_name;
     Operand() : type_(Operand::Type::INVALID){};
 
     // Read information from a string and build an IR representation
@@ -73,34 +73,9 @@ class Opcode {
         NOP,
         END
     };
-    static constexpr int operand_cnt[] = {
-        [INVALID] = 0,
-        [ADD] = 2,
-        [SUB] = 2,
-        [MUL] = 2,
-        [DIV] = 2,
-        [MOD] = 2,
-        [NEG] = 1,
-        [CMPEQ] = 2,
-        [CMPLE] = 2,
-        [CMPLT] = 2,
-        [BR] = 1,
-        [BLBC] = 2,
-        [BLBS] = 2,
-        [LOAD] = 1,
-        [STORE] = 2,
-        [MOVE]=2,
-        [READ] = 0,
-        [WRITE] = 1,
-        [WRL] = 0,
-        [PARAM] = 1,
-        [ENTER] = 1,
-        [ENTRYPC] = 0,
-        [CALL] = 1,
-        [RET] = 1,
-        [NOP] = 0,
-        [END] = 0};
-    static const string opcode_name[];
+    static map<Opcode::Type,int> operand_cnt;
+
+    static map<Opcode::Type,string>opcode_name;
     Type type_;
     Opcode() : type_(Opcode::Type::INVALID){};
 
@@ -111,7 +86,7 @@ class Opcode {
 
 class Instruction {
    public:
-    Opcode op_;
+    Opcode opcode;
     vector<Operand> operand_;
     long long label_;
     Instruction() = delete;
