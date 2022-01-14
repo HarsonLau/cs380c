@@ -11,6 +11,7 @@ using std::map;
 using std::string;
 using std::vector;
 #define OPERAND_DEBUG
+#define OPCODE_DEBUG
 class Operand {
    public:
     enum Type {
@@ -35,7 +36,7 @@ class Operand {
     };
     string variable_name_;
     static const string type_name[];
-    Operand() = delete;
+    Operand():type_(Operand::Type::INVALID){};
 
     // Read information from a string and build an IR representation
     // Assume that the input string does not contain spaces
@@ -99,7 +100,7 @@ class Opcode {
         [END] = 0};
     static const string opcode_name[];
     Type type_;
-    Opcode() = delete;
+    Opcode() :type_(Opcode::Type::INVALID){};
 
     // Read information from a string and build an IR representation
     // Assume that the input string does not contain spaces
@@ -109,7 +110,8 @@ class Opcode {
 class Instruction {
    public:
     Opcode op_;
-    array<Operand, 2> operand_;
+    vector<Operand> operand_;
+    long long label_;
     Instruction()=delete;
     Instruction(const string& s);
 };
