@@ -68,7 +68,9 @@ map<Operand::Type, string> Operand::type_name = {
     {REG, "register"},
     {LABEL, "instruction label"},
     {FUNCTION, "function"},
-    {END, "end"}};
+    {END, "end"},
+    {GLOBAL_VARIABLE, "global variable"},
+    {PARAMETER, "parameter"}};
 
 Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0), variable_name("") {
     if (s.find('(') != string::npos) {
@@ -89,8 +91,12 @@ Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0)
     } else if (s.find("base") != string::npos) {
         auto sharp_idx = s.find('#');
         assert(sharp_idx != string::npos);
-        this->type = Operand::Type::ADDR_OFFSET;
+        //this->type = Operand::Type::ADDR_OFFSET;
         this->offset = atoll(s.substr(sharp_idx + 1).c_str());
+        if (this->offset > 8192)
+            this->type = Operand::Type::GLOBAL_VARIABLE;
+        else if (this->offset < 0)
+            this->type = Operand::Type::LOCAL_VARIABLE;
         auto base_idx = s.find("_base");
         this->variable_name = s.substr(0, base_idx);
     } else if (s.find("offset") != string::npos) {
@@ -102,8 +108,12 @@ Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0)
         this->variable_name = s.substr(0, offset_idex);
     } else if (s.find('#') != string::npos) {
         auto sharp_idx = s.find('#');
-        this->type = Operand::Type::LOCAL_VARIABLE;
+        //this->type = Operand::Type::LOCAL_VARIABLE;
         this->offset = atoll(s.substr(sharp_idx + 1).c_str());
+        if (this->offset < 0)
+            this->type = Operand::Type::LOCAL_VARIABLE;
+        else
+            this->type = Operand::Type::PARAMETER;
         this->variable_name = s.substr(0, sharp_idx);
     } else if (s.find("GP") != string::npos) {
         this->type = Operand::Type::GP;
@@ -251,22 +261,93 @@ string Instruction::ccode() {
 }
 
 void Program::ScanGlobalVariable() {
+}
+
+Function::Function(const vector<Instruction>& instrs, bool _is_main)
+    : instructions(instrs), is_main(_is_main) {
+
+    // Scan all operands for local variables and function parameters
+    for (const auto& inst : this->instructions) {
+        if (inst.opcode.type == Opcode::Type::ENTER) {
+            this->local_var_size = inst.operands[0].constant;
+        } else if (inst.opcode.type == Opcode::Type::RET) {
+            this->param_size = inst.operands[0].constant;
+        }
+
+        for (const auto& operand : inst.operands) {
+            if (operand.type == Operand::Type::LOCAL_VARIABLE) {
+                this->local_variables.emplace_back(operand.variable_name, operand.offset);
+            } else if (operand.type == Operand::Type::PARAMETER) {
+                this->params.emplace_back(operand.variable_name, operand.offset);
+            }
+        }
+    }
+
+    //sort and unique
+    sort(local_variables.begin(), local_variables.end());
+    auto iter1 = std::unique(local_variables.begin(), local_variables.end());
+    local_variables = vector<Variable>(local_variables.begin(), iter1);
+
+    //calculate the size of local variables
+    //parameter's size is 8 == default value of type Variable's size
+    if (!local_variables.empty()) {
+        int i = 0;
+        for (; i < local_variables.size() - 1; ++i) {
+            local_variables[i].size = local_variables[i + 1].address - local_variables[i].address;
+        }
+        local_variables[i].size = -local_variables[i].address;
+    }
+
+    //sort and unique
+    sort(params.begin(), params.end());
+    auto iter2 = std::unique(params.begin(), params.end());
+    params = vector<Variable>(params.begin(), params.end());
+
+    // Reverse the vector so that the elements are in the order they are declared
+    std::reverse(params.begin(), params.end());
+    std::reverse(local_variables.begin(), local_variables.end());
+}
+
+Program::Program(const vector<Instruction>& insts) : instructions(insts),global_variables({}),functions({}) {
+    // Scan all instructions in turn,
+    // and save the global variables that appear in the instructions to the vector,
+    // so that the addresses are arranged from low to high*/
     for (const auto& inst : this->instructions) {
         if (inst.operands.size() == 2 && inst.operands[1].type == Operand::Type::GP) {
             assert(inst.opcode.type == Opcode::Type::ADD);
-            assert(inst.operands[0].type == Operand::Type::ADDR_OFFSET);
+            assert(inst.operands[0].type == Operand::Type::GLOBAL_VARIABLE);
             global_variables.emplace_back(inst.operands[0].variable_name, inst.operands[0].offset);
         }
     }
 
+    // unique
     std::sort(global_variables.begin(), global_variables.end());
     auto iter = std::unique(global_variables.begin(), global_variables.end());
     global_variables = vector<Variable>(global_variables.begin(), iter);
+
+    // calculate the variable size
     if (!global_variables.empty()) {
         int i = 0;
         for (; i < global_variables.size() - 1; i++) {
             global_variables[i].size = global_variables[i + 1].address - global_variables[i].address;
         }
         global_variables[i].size = 32768 - global_variables[i].address;
+    }
+
+    // Reverse the vector so that the elements are in the order they are declared
+    std::reverse(global_variables.begin(), global_variables.end());
+
+    bool _is_main=false;
+    vector<Instruction> tmp={};
+    for(const auto &inst:instructions){
+        if(inst.opcode.type==Opcode::Type::ENTRYPC){
+            _is_main=true;
+        }
+        tmp.push_back(inst);
+        if(inst.opcode.type==Opcode::RET){
+            functions.emplace_back(tmp,_is_main);
+            _is_main=false;
+            tmp={};
+        }
     }
 }

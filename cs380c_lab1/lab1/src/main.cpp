@@ -30,9 +30,13 @@ int main() {
             instructions.emplace_back(line);
     }
     auto program = Program(instructions);
-    program.ScanGlobalVariable();
-    for (const auto& gv : program.global_variables) {
-        std::cout << gv.variable_name << " " << gv.address << " " << gv.size << std::endl;
+    int cnt=0;
+    for(const auto & func: program.functions){
+        for(const auto &inst:func.instructions){
+            std::cout<<Opcode::opcode_name[inst.opcode.type]<<std::endl;
+            cnt++;
+        }
     }
+    std::cout<<"cnt="<<cnt<<" program inst cnt="<<program.instructions.size()<<std::endl;
     return 0;
 }

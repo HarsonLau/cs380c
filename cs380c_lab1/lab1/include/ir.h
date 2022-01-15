@@ -13,8 +13,8 @@ using std::map;
 using std::set;
 using std::string;
 using std::vector;
-#define OPERAND_DEBUG
-#define OPCODE_DEBUG
+//#define OPERAND_DEBUG
+//#define OPCODE_DEBUG
 class Operand {
    public:
     enum Type {
@@ -24,7 +24,9 @@ class Operand {
         CONSTANT,
         ADDR_OFFSET,
         FIELD_OFFSET,
-        LOCAL_VARIABLE,
+        LOCAL_VARIABLE, // local variable in a function
+        GLOBAL_VARIABLE,
+        PARAMETER, //function parameter
         REG,
         LABEL,
         FUNCTION,
@@ -106,7 +108,7 @@ class Variable {
     long long address;     // global variable's address relative to GP
                            // the value of address should >0
     long long size;        // size in bytes
-    Variable(const string& name, long long addr) : variable_name(name), address(addr){};
+    Variable(const string& name, long long addr) : variable_name(name), address(addr),size(8){};
     bool operator<(const Variable& gv) const {
         return this->address < gv.address;
     };
@@ -125,13 +127,18 @@ class Function {
     vector<Variable> local_variables;
     vector<Variable> params;
     vector<Instruction> instructions;
+    long long local_var_size; // size of local variables in bytes
+    long long param_size;     // size of parameters in bytes
+    Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0),is_main(false){};
+    Function(const vector<Instruction> &instrs,bool _is_main=false);
 };
 
 class Program {
    public:
     vector<Instruction> instructions;
     vector<Variable> global_variables;
-    Program(const vector<Instruction>& insts) : instructions(insts){};
+    vector<Function> functions;
+    Program(const vector<Instruction>& insts);
 
     // Scan all instructions in turn,
     // and save the global variables that appear in the instructions to the vector,
