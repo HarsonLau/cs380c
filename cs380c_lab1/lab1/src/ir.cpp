@@ -1,4 +1,6 @@
 #include "ir.h"
+
+#include <algorithm>
 map<Opcode::Type, string> Opcode::opcode_name = {
     {INVALID, "invalid"},
     {ADD, "add"},
@@ -65,66 +67,99 @@ map<Operand::Type, string> Operand::type_name = {
     {LOCAL_VARIABLE, "local variable"},
     {REG, "register"},
     {LABEL, "instruction label"},
+    {FUNCTION, "function"},
     {END, "end"}};
 
-Operand::Operand(const string& s) : type_(INVALID), constant_(0), variable_name_("") {
+Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0), variable_name("") {
     if (s.find('(') != string::npos) {
         assert(s[0] == '(' && s[s.size() - 1] == ')');
-        this->type_ = Operand::Type::REG;
+        this->type = Operand::Type::REG;
 
         // Convert the string inside ( ) to longlong
-        this->reg_name_ = atoll(s.substr(1, s.size() - 2).c_str());
+        this->reg_name = atoll(s.substr(1, s.size() - 2).c_str());
     } else if (s.find('[') != string::npos) {
         assert(s[0] == '[' && s[s.size() - 1] == ']');
-        this->type_ = Operand::Type::LABEL;
-
-        // Convert the string inside [ ]  to longlong
-        this->inst_label_ = atoll(s.substr(1, s.size() - 2).c_str());
+        if (is_function) {
+            this->type = Operand::Type::FUNCTION;
+            this->function_id = atoll(s.substr(1, s.size() - 2).c_str());
+        } else {
+            this->type = Operand::Type::LABEL;
+            this->inst_label = atoll(s.substr(1, s.size() - 2).c_str());
+        }
     } else if (s.find("base") != string::npos) {
         auto sharp_idx = s.find('#');
         assert(sharp_idx != string::npos);
-        this->type_ = Operand::Type::ADDR_OFFSET;
-        this->offset_ = atoll(s.substr(sharp_idx + 1).c_str());
-        this->variable_name_ = s.substr(0, sharp_idx);
+        this->type = Operand::Type::ADDR_OFFSET;
+        this->offset = atoll(s.substr(sharp_idx + 1).c_str());
+        auto base_idx = s.find("_base");
+        this->variable_name = s.substr(0, base_idx);
     } else if (s.find("offset") != string::npos) {
         auto sharp_idx = s.find('#');
         assert(sharp_idx != string::npos);
-        this->type_ = Operand::Type::FIELD_OFFSET;
-        this->offset_ = atoll(s.substr(sharp_idx + 1).c_str());
-        this->variable_name_ = s.substr(0, sharp_idx);
+        this->type = Operand::Type::FIELD_OFFSET;
+        this->offset = atoll(s.substr(sharp_idx + 1).c_str());
+        auto offset_idex = s.find("_offset");
+        this->variable_name = s.substr(0, offset_idex);
     } else if (s.find('#') != string::npos) {
         auto sharp_idx = s.find('#');
-        this->type_ = Operand::Type::LOCAL_VARIABLE;
-        this->offset_ = atoll(s.substr(sharp_idx + 1).c_str());
-        this->variable_name_ = s.substr(0, sharp_idx);
+        this->type = Operand::Type::LOCAL_VARIABLE;
+        this->offset = atoll(s.substr(sharp_idx + 1).c_str());
+        this->variable_name = s.substr(0, sharp_idx);
     } else if (s.find("GP") != string::npos) {
-        this->type_ = Operand::Type::GP;
+        this->type = Operand::Type::GP;
     } else if (s.find("FP") != string::npos) {
-        this->type_ = Operand::Type::FP;
+        this->type = Operand::Type::FP;
     } else {
         // Does not contain #, [, (, so it must be a constant
-        this->type_ = Operand::Type::CONSTANT;
-        this->constant_ = atoll(s.c_str());
+        this->type = Operand::Type::CONSTANT;
+        this->constant = atoll(s.c_str());
     }
 #ifdef OPERAND_DEBUG
     std::cout << "  "
               << "handling operand " << s;
-    std::cout << "  " << Operand::type_name[this->type_] << " " << this->offset_ << "   " << this->variable_name_ << std::endl;
+    std::cout << "  " << Operand::type_name[this->type] << " " << this->offset << "   " << this->variable_name << std::endl;
 #endif
 }
 
+string Operand::ccode() {
+    std::stringstream tmp;
+    switch (this->type) {
+        case Operand::Type::FP:
+            return "FP";
+        case Operand::Type::GP:
+            return "GP";
+        case Operand::Type::REG:
+            tmp << "r[" << this->reg_name << "]";
+            return tmp.str();
+        case Operand::Type::LOCAL_VARIABLE:
+            tmp << "LOCAL(" << this->offset << ")";
+            return tmp.str();
+        case Operand::Type::FUNCTION:
+            tmp << "function" << this->function_id;
+            return tmp.str();
+        case Operand::Type::FIELD_OFFSET:
+        case Operand::Type::ADDR_OFFSET:
+        case Operand::Type::CONSTANT:
+        case Operand::Type::LABEL: {
+            tmp << "inst_" << this->constant;
+            return tmp.str();
+        }
+    }
+    return tmp.str();
+}
+
 //match input with opcode to determine type
-Opcode::Opcode(const string& s) : type_(Opcode::Type::INVALID) {
+Opcode::Opcode(const string& s) : type(Opcode::Type::INVALID) {
     for (int i = 0; i < Opcode::Type::END; i++) {
         if (s.find(Opcode::opcode_name[Opcode::Type(i)]) != string::npos) {
-            this->type_ = Opcode::Type(i);
+            this->type = Opcode::Type(i);
             break;
         }
     }
-    assert(s.find(Opcode::opcode_name[this->type_]) != string::npos);
+    assert(s.find(Opcode::opcode_name[this->type]) != string::npos);
 #ifdef OPCODE_DEBUG
     std::cout << "handling opcode " << s << " ";
-    std::cout << Opcode::opcode_name[this->type_] << std::endl;
+    std::cout << Opcode::opcode_name[this->type] << std::endl;
 #endif
 }
 
@@ -136,21 +171,102 @@ Instruction::Instruction(const string& s) {
     auto idx3 = s.find_first_not_of(' ', idx2 + 1);
     assert(idx3 != string::npos && idx3 < s.size());
     assert(idx1 != string::npos && idx2 != string::npos && idx1 != idx2);
-    this->label_ = atoll(s.substr(idx1, idx2 - idx1).c_str());
+    this->label = atoll(s.substr(idx1, idx2 - idx1).c_str());
     this->opcode = Opcode(s);
-    if (Opcode::operand_cnt.at(opcode.type_) > 0) {
+    if (Opcode::operand_cnt.at(opcode.type) > 0) {
         auto idx4 = s.find_first_of(' ', idx3);
         assert(idx4 != string::npos && idx4 < s.size());
         auto idx6 = s.find_first_not_of(' ', idx4);
-        if (Opcode::operand_cnt.at(opcode.type_) == 1) {
-            operand_.emplace_back(s.substr(idx6));
+        auto is_function = (s.find("call") != string::npos);
+        if (Opcode::operand_cnt.at(opcode.type) == 1) {
+            operands.emplace_back(s.substr(idx6), is_function);
         } else {
             auto idx8 = s.find_first_of(' ', idx6);
-            operand_.emplace_back(s.substr(idx6, idx8 - idx6));
+            operands.emplace_back(s.substr(idx6, idx8 - idx6));
             auto idx7 = s.find_first_not_of(' ', idx8);
             auto idx5 = s.find_last_not_of(' ');
-            operand_.emplace_back(s.substr(idx7, idx5 - idx7 + 1));
+            operands.emplace_back(s.substr(idx7, idx5 - idx7 + 1));
         }
     }
-    assert(operand_.size() == Opcode::operand_cnt.at(opcode.type_));
+    assert(operands.size() == Opcode::operand_cnt.at(opcode.type));
+}
+
+string Instruction::ccode() {
+    std::stringstream tmp;
+    switch (this->opcode.type) {
+        case Opcode::Type::ADD:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "+" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::SUB:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "-" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::MUL:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "*" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::DIV:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "/" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::MOD:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "%" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::NEG:
+            tmp << "r[" << this->label << "]=-" << operands[0].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::CMPEQ:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "==" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::CMPLE:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "<=" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::CMPLT:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "< " << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::BR:
+            tmp << "goto " << operands[0].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::BLBC:
+            tmp << "if(" << operands[0].ccode() << "==0) goto " << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::BLBS:
+            tmp << "if(" << operands[0].ccode() << "!=0) goto " << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::CALL:
+            assert(operands[0].type == Operand::Type::FUNCTION);
+            tmp << operands[0].ccode() << "();";
+            return tmp.str();
+        case Opcode::Type::LOAD:
+            //fixme
+            tmp << "r[" << this->label << "]="
+                << "*(" << operands[0].ccode() << ");";
+            return tmp.str();
+        case Opcode::Type::MOVE:
+            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "=" << operands[1].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::STORE:
+            //fixme
+            tmp << "*(" << operands[0].ccode() << ")=" << operands[1].ccode() << ";";
+            return tmp.str();
+    }
+    return tmp.str();
+}
+
+void Program::ScanGlobalVariable() {
+    for (const auto& inst : this->instructions) {
+        if (inst.operands.size() == 2 && inst.operands[1].type == Operand::Type::GP) {
+            assert(inst.opcode.type == Opcode::Type::ADD);
+            assert(inst.operands[0].type == Operand::Type::ADDR_OFFSET);
+            global_variables.emplace_back(inst.operands[0].variable_name, inst.operands[0].offset);
+        }
+    }
+
+    std::sort(global_variables.begin(), global_variables.end());
+    auto iter = std::unique(global_variables.begin(), global_variables.end());
+    global_variables = vector<Variable>(global_variables.begin(), iter);
+    if (!global_variables.empty()) {
+        int i = 0;
+        for (; i < global_variables.size() - 1; i++) {
+            global_variables[i].size = global_variables[i + 1].address - global_variables[i].address;
+        }
+        global_variables[i].size = 32768 - global_variables[i].address;
+    }
 }

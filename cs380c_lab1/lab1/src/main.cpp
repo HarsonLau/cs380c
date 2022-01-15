@@ -2,6 +2,11 @@
 #include <string>
 
 #include "ir.h"
+int test(int a, int b) {
+    int* ptmp = &a;
+    *ptmp = b;
+    return a;
+}
 int main() {
     /*
     string ops[10]={"GP","FP","24","global_array_base#32576"," y_offset#8"," a#24","(12)","[48]"};
@@ -21,8 +26,13 @@ int main() {
     */
     vector<Instruction> instructions;
     for (std::string line; std::getline(std::cin, line);) {
-        if(line.find("instr")!=string::npos)
+        if (line.find("instr") != string::npos)
             instructions.emplace_back(line);
+    }
+    auto program = Program(instructions);
+    program.ScanGlobalVariable();
+    for (const auto& gv : program.global_variables) {
+        std::cout << gv.variable_name << " " << gv.address << " " << gv.size << std::endl;
     }
     return 0;
 }
