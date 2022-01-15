@@ -13,17 +13,24 @@ int main() {
     for(int i=0;ops[i].size()>0;i++){
         auto operand=Operand(ops[i]);
     }
-
-    auto i1 = Instruction("instr 33:   add   global_array_base#10024   GP");
-    std::cout << "---" << std::endl;
-    auto i2 = Instruction("instr 49: mul (48) 8");
-    std::cout << "---" << std::endl;
-    auto i3 = Instruction("	instr 46: add p_base#32560 GP");
-    std::cout << "---" << std::endl;
-    auto i4 = Instruction("instr 43: load (42)");
-    std::cout << "---" << std::endl;
-    auto i5 = Instruction("fadf 231:   nop ");
-    */
+*/
+    vector<string> raw_insts = {
+        "instr 35: add x#-8 y#-16",
+        "instr 33: add global_array_base#10024 GP",
+        "instr 49: mul (48) 8",
+        "instr 46: add p_base#32560 FP",
+        "instr 43: load (42)",
+        "instr 59: sub height#16 1",
+        "instr 5: move a#24 c#-8",
+        "instr 8: add a_base#32728 GP",
+        "instr 9: add (8) x_offset#8"};
+    for (const auto ri : raw_insts) {
+        auto inst = Instruction(ri);
+        std::cout << ri << std::endl;
+        std::cout << inst.ccode() << std::endl;
+        std::cout << "---" << std::endl;
+    }
+    /*
     vector<Instruction> instructions;
     for (std::string line; std::getline(std::cin, line);) {
         if (line.find("instr") != string::npos)
@@ -38,5 +45,6 @@ int main() {
         }
     }
     std::cout<<"cnt="<<cnt<<" program inst cnt="<<program.instructions.size()<<std::endl;
+    */
     return 0;
 }

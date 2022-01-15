@@ -65,11 +65,12 @@ map<Operand::Type, string> Operand::type_name = {
     {ADDR_OFFSET, "address offset"},
     {FIELD_OFFSET, "field offset"},
     {LOCAL_VARIABLE, "local variable"},
+    {LOCAL_ADDR,"local variable address"},
     {REG, "register"},
     {LABEL, "instruction label"},
     {FUNCTION, "function"},
     {END, "end"},
-    {GLOBAL_VARIABLE, "global variable"},
+    {GLOBAL_ADDR, "global variable address"},
     {PARAMETER, "parameter"}};
 
 Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0), variable_name("") {
@@ -94,9 +95,9 @@ Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0)
         //this->type = Operand::Type::ADDR_OFFSET;
         this->offset = atoll(s.substr(sharp_idx + 1).c_str());
         if (this->offset > 8192)
-            this->type = Operand::Type::GLOBAL_VARIABLE;
+            this->type = Operand::Type::GLOBAL_ADDR;
         else if (this->offset < 0)
-            this->type = Operand::Type::LOCAL_VARIABLE;
+            this->type = Operand::Type::LOCAL_ADDR;
         auto base_idx = s.find("_base");
         this->variable_name = s.substr(0, base_idx);
     } else if (s.find("offset") != string::npos) {
@@ -135,21 +136,26 @@ string Operand::ccode() {
     std::stringstream tmp;
     switch (this->type) {
         case Operand::Type::FP:
-            return "FP";
         case Operand::Type::GP:
-            return "GP";
+            return "0";
         case Operand::Type::REG:
             tmp << "r[" << this->reg_name << "]";
             return tmp.str();
         case Operand::Type::LOCAL_VARIABLE:
-            tmp << "LOCAL(" << this->offset << ")";
+        case Operand::Type::PARAMETER:
+            tmp<<this->variable_name;
+            return tmp.str();
+        case Operand::Type::GLOBAL_ADDR:
+        case Operand::Type::LOCAL_ADDR:
+            tmp << "(long long)(&" << this->variable_name << ")";
             return tmp.str();
         case Operand::Type::FUNCTION:
-            tmp << "function" << this->function_id;
+            tmp << "function_" << this->function_id;
             return tmp.str();
         case Operand::Type::FIELD_OFFSET:
-        case Operand::Type::ADDR_OFFSET:
         case Operand::Type::CONSTANT:
+            tmp << this->constant;
+            return tmp.str();
         case Operand::Type::LABEL: {
             tmp << "inst_" << this->constant;
             return tmp.str();
@@ -250,7 +256,7 @@ string Instruction::ccode() {
                 << "*(" << operands[0].ccode() << ");";
             return tmp.str();
         case Opcode::Type::MOVE:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "=" << operands[1].ccode() << ";";
+            tmp << operands[1].ccode() << "=" << operands[0].ccode() << ";";
             return tmp.str();
         case Opcode::Type::STORE:
             //fixme
@@ -265,7 +271,6 @@ void Program::ScanGlobalVariable() {
 
 Function::Function(const vector<Instruction>& instrs, bool _is_main)
     : instructions(instrs), is_main(_is_main) {
-
     // Scan all operands for local variables and function parameters
     for (const auto& inst : this->instructions) {
         if (inst.opcode.type == Opcode::Type::ENTER) {
@@ -308,14 +313,14 @@ Function::Function(const vector<Instruction>& instrs, bool _is_main)
     std::reverse(local_variables.begin(), local_variables.end());
 }
 
-Program::Program(const vector<Instruction>& insts) : instructions(insts),global_variables({}),functions({}) {
+Program::Program(const vector<Instruction>& insts) : instructions(insts), global_variables({}), functions({}) {
     // Scan all instructions in turn,
     // and save the global variables that appear in the instructions to the vector,
     // so that the addresses are arranged from low to high*/
     for (const auto& inst : this->instructions) {
         if (inst.operands.size() == 2 && inst.operands[1].type == Operand::Type::GP) {
             assert(inst.opcode.type == Opcode::Type::ADD);
-            assert(inst.operands[0].type == Operand::Type::GLOBAL_VARIABLE);
+            assert(inst.operands[0].type == Operand::Type::GLOBAL_ADDR);
             global_variables.emplace_back(inst.operands[0].variable_name, inst.operands[0].offset);
         }
     }
@@ -337,17 +342,18 @@ Program::Program(const vector<Instruction>& insts) : instructions(insts),global_
     // Reverse the vector so that the elements are in the order they are declared
     std::reverse(global_variables.begin(), global_variables.end());
 
-    bool _is_main=false;
-    vector<Instruction> tmp={};
-    for(const auto &inst:instructions){
-        if(inst.opcode.type==Opcode::Type::ENTRYPC){
-            _is_main=true;
+    // Divide the entire program into several functions for processing
+    bool _is_main = false;
+    vector<Instruction> tmp = {};
+    for (const auto& inst : instructions) {
+        if (inst.opcode.type == Opcode::Type::ENTRYPC) {
+            _is_main = true;
         }
         tmp.push_back(inst);
-        if(inst.opcode.type==Opcode::RET){
-            functions.emplace_back(tmp,_is_main);
-            _is_main=false;
-            tmp={};
+        if (inst.opcode.type == Opcode::RET) {
+            functions.emplace_back(tmp, _is_main);
+            _is_main = false;
+            tmp = {};
         }
     }
 }

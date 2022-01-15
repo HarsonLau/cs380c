@@ -25,7 +25,8 @@ class Operand {
         ADDR_OFFSET,
         FIELD_OFFSET,
         LOCAL_VARIABLE, // local variable in a function
-        GLOBAL_VARIABLE,
+        LOCAL_ADDR, // address offser of a local variable
+        GLOBAL_ADDR,
         PARAMETER, //function parameter
         REG,
         LABEL,
