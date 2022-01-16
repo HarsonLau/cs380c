@@ -97,7 +97,6 @@ class Opcode {
     Opcode(const string& s);
 };
 
-
 class Variable {
    public:
     string variable_name;  //global_array_base#32576 's name should be global_array
@@ -121,6 +120,7 @@ class Instruction {
     Instruction() = delete;
     Instruction(const string& s);
     string ccode(deque<string>& context);
+    bool is_branch();
 };
 
 class Basic_block {
@@ -133,7 +133,7 @@ class Function {
     vector<Variable> local_variables;
     vector<Variable> params;
     vector<Instruction> instructions;
-    deque<string> context;   //Arguments when calling a function inside this function
+    deque<string> context;     //Arguments when calling a function inside this function
     long long local_var_size;  // size of local variables in bytes
     long long param_size;      // size of parameters in bytes
     long long id;
@@ -144,15 +144,10 @@ class Function {
 
 class Program {
    public:
-    vector<Instruction> instructions;
     vector<Variable> global_variables;
     vector<Function> functions;
     Program(const vector<Instruction>& insts);
-
-    // Scan all instructions in turn,
-    // and save the global variables that appear in the instructions to the vector,
-    // so that the addresses are arranged from low to high
-    void ScanGlobalVariable();
+    long long instruction_cnt;
     string ccode();
 };
 #endif  //IR_H
