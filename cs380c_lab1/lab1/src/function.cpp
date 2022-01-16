@@ -57,7 +57,7 @@ Function::Function(vector<Instruction>& instrs, bool _is_main)
     this->param_size = instrs.back().operands[0].constant;
     this->scan_local_variables(instrs);
     this->scan_parameters(instrs);
-    //this->scan_block_leaders(instrs);
+    this->scan_block_leaders(instrs);
 
 #ifdef FUNCTION_DEBUG
     std::cout << "function" << this->id << std::endl;
@@ -106,6 +106,7 @@ string Function::ccode(){
 
 void Function::scan_block_leaders(vector<Instruction>& instrs) {
     const int n = instrs.size();
+    
     for (int i = 0; i < n; i++) {
         if (instrs[i].is_branch()) {
             // a branch instruction cannot be the last instruction of a function
@@ -115,8 +116,9 @@ void Function::scan_block_leaders(vector<Instruction>& instrs) {
             long long own_label = instrs[i].label;
             long long target_index = target_label - own_label + i;
             //the target instruction must be in the same function
-            assert(target_label >= 0 && target_label < n);
-            instrs[target_label].predecessor_labels.push_back(own_label);
+            assert(target_index >= 0 && target_index < n);
+            assert(instrs[target_index].label==target_label);
+            instrs[target_index].predecessor_labels.push_back(own_label);
         }
     }
 }
