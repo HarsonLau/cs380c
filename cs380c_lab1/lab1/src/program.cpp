@@ -1,12 +1,11 @@
-#include "ir.h"
-
 #include <algorithm>
 
-Program::Program(const vector<Instruction>& insts) : instruction_cnt(insts.size()), global_variables({}), functions({}) {
+#include "ir.h"
+void Program::scan_global_variables(vector<Instruction>& instrs) {
     // Scan all instructions in turn,
     // and save the global variables that appear in the instructions to the vector,
     // so that the addresses are arranged from low to high*/
-    for (const auto& inst : insts) {
+    for (const auto& inst : instrs) {
         if (inst.operands.size() == 2 && inst.operands[1].type == Operand::Type::GP) {
             assert(inst.opcode.type == Opcode::Type::ADD);
             assert(inst.operands[0].type == Operand::Type::GLOBAL_ADDR);
@@ -30,8 +29,12 @@ Program::Program(const vector<Instruction>& insts) : instruction_cnt(insts.size(
 
     // Reverse the vector so that the elements are in the order they are declared
     std::reverse(global_variables.begin(), global_variables.end());
+}
 
-    // Divide the entire program into several functions for processing
+Program::Program(vector<Instruction>& insts) : instruction_cnt(insts.size()), global_variables({}), functions({}) {
+    // scan for global variables
+    this->scan_global_variables(insts);
+    // Divide the entire program into several functions for further processing
     bool _is_main = false;
     vector<Instruction> tmp = {};
     for (const auto& inst : insts) {

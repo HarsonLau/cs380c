@@ -100,7 +100,7 @@ class Opcode {
 class Variable {
    public:
     string variable_name;  //global_array_base#32576 's name should be global_array
-    long long address;     // global variable's address relative to GP
+    long long address;     // variable's address relative to GP or FP
                            // the value of address should >0
     long long size;        // size in bytes
     Variable(const string& name, long long addr) : variable_name(name), address(addr), size(8){};
@@ -128,6 +128,12 @@ class Basic_block {
 };
 
 class Function {
+   private:
+    // Scan all operands for local variables
+    void scan_local_variables(vector<Instruction>& instrs);
+    // Scan all operands for function parameters
+    void scan_parameters(vector<Instruction>& instrs);
+
    public:
     bool is_main;
     vector<Variable> local_variables;
@@ -138,15 +144,20 @@ class Function {
     long long param_size;      // size of parameters in bytes
     long long id;
     Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0), is_main(false), context({}){};
-    Function(const vector<Instruction>& instrs, bool _is_main = false);
+    // the first instruction must be enter ,the last must be ret
+    Function(vector<Instruction>& instrs, bool _is_main = false);
     string ccode();
 };
 
 class Program {
+   private:
+   // Scan all operands for global variables
+    void scan_global_variables(vector<Instruction>& instrs);
+
    public:
     vector<Variable> global_variables;
     vector<Function> functions;
-    Program(const vector<Instruction>& insts);
+    Program(vector<Instruction>& insts);
     long long instruction_cnt;
     string ccode();
 };

@@ -1,23 +1,13 @@
-#include"ir.h"
-#include<algorithm>
-Function::Function(const vector<Instruction>& instrs, bool _is_main)
-    : instructions(instrs), is_main(_is_main), id(0) {
-    // Scan all operands for local variables and function parameters
-    for (const auto& inst : this->instructions) {
-        if (inst.opcode.type == Opcode::Type::ENTER) {
-            this->local_var_size = inst.operands[0].constant;
-            this->id = inst.label;
-        } else if (inst.opcode.type == Opcode::Type::RET) {
-            this->param_size = inst.operands[0].constant;
-        }
+#include <algorithm>
 
+#include "ir.h"
+void Function::scan_local_variables(vector<Instruction>& instrs) {
+    for (const auto& inst : instrs) {
         for (const auto& operand : inst.operands) {
             if (operand.type == Operand::Type::LOCAL_VARIABLE) {
                 this->local_variables.emplace_back(operand.variable_name, operand.offset);
             } else if (operand.type == Operand::Type::LOCAL_ADDR) {
                 this->local_variables.emplace_back(operand.variable_name, operand.offset);
-            } else if (operand.type == Operand::Type::PARAMETER) {
-                this->params.emplace_back(operand.variable_name, operand.offset);
             }
         }
     }
@@ -28,7 +18,6 @@ Function::Function(const vector<Instruction>& instrs, bool _is_main)
     local_variables = vector<Variable>(local_variables.begin(), iter1);
 
     //calculate the size of local variables
-    //parameter's size is 8 == default value of type Variable's size
     if (!local_variables.empty()) {
         int i = 0;
         for (; i < local_variables.size() - 1; ++i) {
@@ -37,14 +26,38 @@ Function::Function(const vector<Instruction>& instrs, bool _is_main)
         local_variables[i].size = -local_variables[i].address;
     }
 
+    std::reverse(local_variables.begin(), local_variables.end());
+}
+
+void Function::scan_parameters(vector<Instruction>& instrs) {
+    for (const auto& inst : this->instructions) {
+        for (const auto& operand : inst.operands) {
+            if (operand.type == Operand::Type::PARAMETER) {
+                this->params.emplace_back(operand.variable_name, operand.offset);
+            }
+        }
+    }
     //sort and unique
     sort(params.begin(), params.end());
     auto iter2 = std::unique(params.begin(), params.end());
     params = vector<Variable>(params.begin(), iter2);
 
+    //parameter's size is 8 == default value of type Variable's size
+
     // Reverse the vector so that the elements are in the order they are declared
     std::reverse(params.begin(), params.end());
-    std::reverse(local_variables.begin(), local_variables.end());
+}
+
+Function::Function(vector<Instruction>& instrs, bool _is_main)
+    : instructions(instrs), is_main(_is_main), id(0) {
+    assert(instrs[0].opcode.type == Opcode::Type::ENTER);
+    this->local_var_size = instrs[0].operands[0].constant;
+    this->id = instrs[0].label;
+    assert(instrs.back().opcode.type == Opcode::Type::RET);
+    this->param_size = instrs.back().operands[0].constant;
+    this->scan_local_variables(instrs);
+    this->scan_parameters(instrs);
+
 #ifdef FUNCTION_DEBUG
     std::cout << "function" << this->id << std::endl;
     std::cout << "--params---" << std::endl;
