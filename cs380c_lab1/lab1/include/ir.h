@@ -15,6 +15,8 @@ using std::string;
 using std::vector;
 //#define OPERAND_DEBUG
 //#define OPCODE_DEBUG
+//#define PROGRAM_DEBUG
+//#define FUNCTION_DEBUG
 class Operand {
    public:
     enum Type {
@@ -130,6 +132,7 @@ class Function {
     vector<Instruction> instructions;
     long long local_var_size; // size of local variables in bytes
     long long param_size;     // size of parameters in bytes
+    long long id;
     Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0),is_main(false){};
     Function(const vector<Instruction> &instrs,bool _is_main=false);
 };

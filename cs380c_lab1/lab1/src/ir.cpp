@@ -65,7 +65,7 @@ map<Operand::Type, string> Operand::type_name = {
     {ADDR_OFFSET, "address offset"},
     {FIELD_OFFSET, "field offset"},
     {LOCAL_VARIABLE, "local variable"},
-    {LOCAL_ADDR,"local variable address"},
+    {LOCAL_ADDR, "local variable address"},
     {REG, "register"},
     {LABEL, "instruction label"},
     {FUNCTION, "function"},
@@ -143,7 +143,7 @@ string Operand::ccode() {
             return tmp.str();
         case Operand::Type::LOCAL_VARIABLE:
         case Operand::Type::PARAMETER:
-            tmp<<this->variable_name;
+            tmp << this->variable_name;
             return tmp.str();
         case Operand::Type::GLOBAL_ADDR:
         case Operand::Type::LOCAL_ADDR:
@@ -270,17 +270,20 @@ void Program::ScanGlobalVariable() {
 }
 
 Function::Function(const vector<Instruction>& instrs, bool _is_main)
-    : instructions(instrs), is_main(_is_main) {
+    : instructions(instrs), is_main(_is_main), id(0) {
     // Scan all operands for local variables and function parameters
     for (const auto& inst : this->instructions) {
         if (inst.opcode.type == Opcode::Type::ENTER) {
             this->local_var_size = inst.operands[0].constant;
+            this->id = inst.label;
         } else if (inst.opcode.type == Opcode::Type::RET) {
             this->param_size = inst.operands[0].constant;
         }
 
         for (const auto& operand : inst.operands) {
             if (operand.type == Operand::Type::LOCAL_VARIABLE) {
+                this->local_variables.emplace_back(operand.variable_name, operand.offset);
+            } else if (operand.type == Operand::Type::LOCAL_ADDR) {
                 this->local_variables.emplace_back(operand.variable_name, operand.offset);
             } else if (operand.type == Operand::Type::PARAMETER) {
                 this->params.emplace_back(operand.variable_name, operand.offset);
@@ -306,11 +309,22 @@ Function::Function(const vector<Instruction>& instrs, bool _is_main)
     //sort and unique
     sort(params.begin(), params.end());
     auto iter2 = std::unique(params.begin(), params.end());
-    params = vector<Variable>(params.begin(), params.end());
+    params = vector<Variable>(params.begin(), iter2);
 
     // Reverse the vector so that the elements are in the order they are declared
     std::reverse(params.begin(), params.end());
     std::reverse(local_variables.begin(), local_variables.end());
+#ifdef FUNCTION_DEBUG
+    std::cout << "function" << this->id << std::endl;
+    std::cout << "--params---" << std::endl;
+    for (const auto& v : this->params) {
+        std::cout << v.variable_name << " " << v.size << " " << std::endl;
+    }
+    std::cout << "--local variables---" << std::endl;
+    for (const auto& v : this->local_variables) {
+        std::cout << v.variable_name << " " << v.size << " " << std::endl;
+    }
+#endif
 }
 
 Program::Program(const vector<Instruction>& insts) : instructions(insts), global_variables({}), functions({}) {
@@ -356,4 +370,11 @@ Program::Program(const vector<Instruction>& insts) : instructions(insts), global
             tmp = {};
         }
     }
+#ifdef PROGRAM_DEBUG
+    std::cout << "program" << std::endl;
+    std::cout << "--global variables---" << std::endl;
+    for (const auto& v : this->global_variables) {
+        std::cout << v.variable_name << " " << v.size << " " << std::endl;
+    }
+#endif
 }
