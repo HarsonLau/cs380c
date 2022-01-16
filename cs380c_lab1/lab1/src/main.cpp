@@ -13,7 +13,7 @@ int main() {
     for(int i=0;ops[i].size()>0;i++){
         auto operand=Operand(ops[i]);
     }
-
+*/
     vector<string> raw_insts = {
         "instr 2: enter 8",
         "instr 3: cmpeq b#16 0",
@@ -30,18 +30,17 @@ int main() {
         "instr 14: add res_base#32744 GP",
         "instr 15: store a#24 (14)",
         "instr 11: add m1_base#-96 FP",
+        "instr 17: nop",
         "instr 16: ret 16"};
     vector<Instruction> insts = {};
     for (const auto ri : raw_insts) {
         auto inst = Instruction(ri);
-        
-        std::cout << ri << std::endl;
-        std::cout << inst.ccode() << std::endl;
-        std::cout << "---" << std::endl;
-        
+        std::cout << ri << std::endl;        
         insts.push_back(inst);
     }
     auto f1 = Function(insts);
+    std::cout<<f1.ccode()<<std::endl;
+    /*
     for(const auto & v:f1.local_variables){
         std::cout<< v.variable_name<<" "<<v.size<<" "<<std::endl;
     }
@@ -50,13 +49,14 @@ int main() {
         std::cout<< v.variable_name<<" "<<v.size<<" "<<std::endl;
     }*/
 
+/*
     vector<Instruction> instructions;
     for (std::string line; std::getline(std::cin, line);) {
         if (line.find("instr") != string::npos)
             instructions.emplace_back(line);
     }
     auto program = Program(instructions);
-    
+    */
 
     return 0;
 }

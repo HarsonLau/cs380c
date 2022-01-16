@@ -4,11 +4,13 @@
 #include <cassert>
 #include <iostream>
 #include <map>
+#include <queue>
 #include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 using std::array;
+using std::deque;
 using std::map;
 using std::set;
 using std::string;
@@ -26,10 +28,10 @@ class Operand {
         CONSTANT,
         ADDR_OFFSET,
         FIELD_OFFSET,
-        LOCAL_VARIABLE, // local variable in a function
-        LOCAL_ADDR, // address offser of a local variable
+        LOCAL_VARIABLE,  // local variable in a function
+        LOCAL_ADDR,      // address offser of a local variable
         GLOBAL_ADDR,
-        PARAMETER, //function parameter
+        PARAMETER,  //function parameter
         REG,
         LABEL,
         FUNCTION,
@@ -95,15 +97,6 @@ class Opcode {
     Opcode(const string& s);
 };
 
-class Instruction {
-   public:
-    Opcode opcode;
-    vector<Operand> operands;
-    long long label;
-    Instruction() = delete;
-    Instruction(const string& s);
-    string ccode();
-};
 
 class Variable {
    public:
@@ -111,13 +104,23 @@ class Variable {
     long long address;     // global variable's address relative to GP
                            // the value of address should >0
     long long size;        // size in bytes
-    Variable(const string& name, long long addr) : variable_name(name), address(addr),size(8){};
+    Variable(const string& name, long long addr) : variable_name(name), address(addr), size(8){};
     bool operator<(const Variable& gv) const {
         return this->address < gv.address;
     };
     bool operator==(const Variable& gv) const {
         return this->address == gv.address && this->variable_name == gv.variable_name;
     }
+};
+
+class Instruction {
+   public:
+    Opcode opcode;
+    vector<Operand> operands;
+    long long label;
+    Instruction() = delete;
+    Instruction(const string& s);
+    string ccode(deque<string>& context);
 };
 
 class Basic_block {
@@ -130,11 +133,13 @@ class Function {
     vector<Variable> local_variables;
     vector<Variable> params;
     vector<Instruction> instructions;
-    long long local_var_size; // size of local variables in bytes
-    long long param_size;     // size of parameters in bytes
+    deque<string> context;   //Arguments when calling a function inside this function
+    long long local_var_size;  // size of local variables in bytes
+    long long param_size;      // size of parameters in bytes
     long long id;
-    Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0),is_main(false){};
-    Function(const vector<Instruction> &instrs,bool _is_main=false);
+    Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0), is_main(false), context({}){};
+    Function(const vector<Instruction>& instrs, bool _is_main = false);
+    string ccode();
 };
 
 class Program {

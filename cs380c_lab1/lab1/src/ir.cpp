@@ -207,60 +207,87 @@ Instruction::Instruction(const string& s) {
     assert(operands.size() == Opcode::operand_cnt.at(opcode.type));
 }
 
-string Instruction::ccode() {
+string Instruction::ccode(deque<string>& context) {
     std::stringstream tmp;
+    tmp << "inst_" << this->label << ":";
     switch (this->opcode.type) {
         case Opcode::Type::ADD:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "+" << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " + " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::SUB:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "-" << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " - " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::MUL:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "*" << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " * " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::DIV:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "/" << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " / " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::MOD:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "%" << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " % " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::NEG:
-            tmp << "r[" << this->label << "]=-" << operands[0].ccode() << ";";
+            tmp << "r[" << this->label << "] = -" << operands[0].ccode() << " ; ";
             return tmp.str();
         case Opcode::Type::CMPEQ:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "==" << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " == " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::CMPLE:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "<=" << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " <= " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::CMPLT:
-            tmp << "r[" << this->label << "]=" << operands[0].ccode() << "< " << operands[1].ccode() << ";";
+            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " < " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::BR:
             tmp << "goto " << operands[0].ccode() << ";";
             return tmp.str();
         case Opcode::Type::BLBC:
-            tmp << "if(" << operands[0].ccode() << "==0) goto " << operands[1].ccode() << ";";
+            tmp << "if(" << operands[0].ccode() << " == 0) goto " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::BLBS:
-            tmp << "if(" << operands[0].ccode() << "!=0) goto " << operands[1].ccode() << ";";
-            return tmp.str();
-        case Opcode::Type::CALL:
-            assert(operands[0].type == Operand::Type::FUNCTION);
-            tmp << operands[0].ccode() << "();";
+            tmp << "if(" << operands[0].ccode() << " !=0) goto " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::LOAD:
-            //fixme
-            tmp << "r[" << this->label << "]="
-                << "*(" << operands[0].ccode() << ");";
-            return tmp.str();
-        case Opcode::Type::MOVE:
-            tmp << operands[1].ccode() << "=" << operands[0].ccode() << ";";
+            tmp << "r[" << this->label << "] = "
+                << "*((long long *)" << operands[0].ccode() << ");";
             return tmp.str();
         case Opcode::Type::STORE:
-            //fixme
-            tmp << "*(" << operands[0].ccode() << ")=" << operands[1].ccode() << ";";
+            tmp << "*( (long long *)" << operands[1].ccode() << ") = " << operands[0].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::MOVE:
+            tmp << operands[1].ccode() << " = " << operands[0].ccode() << ";";
+            return tmp.str();
+        case Opcode::Type::READ:
+            tmp << "ReadLong(" << operands[0].ccode() << ");";
+            return tmp.str();
+        case Opcode::Type::WRITE:
+            tmp << "WriteLong(" << operands[0].ccode() << ");";
+            return tmp.str();
+        case Opcode::Type::WRL:
+            tmp << "WriteLine();";
+            return tmp.str();
+        case Opcode::Type::PARAM:
+            context.push_back(operands[0].variable_name);
+            return "";
+        case Opcode::Type::ENTER:
+            return "";
+        case Opcode::Type::ENTRYPC:
+            return "";
+        case Opcode::Type::CALL:
+            tmp << operands[0].ccode();
+            tmp << "(";
+            while (!context.empty()) {
+                tmp << context.front();
+                context.pop_front();
+                if (!context.empty())
+                    tmp << ",";
+            }
+            tmp << ");";
+            return tmp.str();
+        case Opcode::Type::RET:
+            tmp << "return ;";
+            return tmp.str();
+        case Opcode::Type::NOP:
             return tmp.str();
     }
     return tmp.str();
@@ -325,6 +352,33 @@ Function::Function(const vector<Instruction>& instrs, bool _is_main)
         std::cout << v.variable_name << " " << v.size << " " << std::endl;
     }
 #endif
+}
+
+string Function::ccode() {
+    std::stringstream tmp;
+    tmp << "void function_" << id << "(";
+    for (int i = 0; i < params.size(); i++) {
+        tmp << "long long " << params[i].variable_name;
+        if (params.size() > 1 && i < params.size() - 1) {
+            tmp << ",";
+        }
+    }
+    tmp << "){";
+    tmp << std::endl;
+
+    for (auto& v : local_variables) {
+        tmp << "  long long " << v.variable_name;
+        if (v.size > 8)
+            tmp << "[" << v.size / 8 << "]";
+        tmp << ";";
+        tmp << std::endl;
+    }
+    for (auto& inst : instructions) {
+        tmp << "  " << inst.ccode(context) << std::endl;
+    }
+
+    tmp << "}";
+    return tmp.str();
 }
 
 Program::Program(const vector<Instruction>& insts) : instructions(insts), global_variables({}), functions({}) {
