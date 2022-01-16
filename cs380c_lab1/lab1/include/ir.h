@@ -121,6 +121,9 @@ class Instruction {
     Instruction(const string& s);
     string ccode(deque<string>& context);
     bool is_branch();
+    bool is_block_leader;
+    long long branch_target_label();
+    vector<long long> predecessor_labels;
 };
 
 class Basic_block {
@@ -133,6 +136,10 @@ class Function {
     void scan_local_variables(vector<Instruction>& instrs);
     // Scan all operands for function parameters
     void scan_parameters(vector<Instruction>& instrs);
+    // Scan all instructions for basic block leaders
+    // this function will modify the instrs passed as arguments
+    // assuming the labels in the instrs is continuous and in an ascending order
+    void scan_block_leaders(vector<Instruction>& instrs);
 
    public:
     bool is_main;
@@ -151,7 +158,7 @@ class Function {
 
 class Program {
    private:
-   // Scan all operands for global variables
+    // Scan all operands for global variables
     void scan_global_variables(vector<Instruction>& instrs);
 
    public:

@@ -1,5 +1,5 @@
 #include "ir.h"
-Instruction::Instruction(const string& s) {
+Instruction::Instruction(const string& s):is_block_leader(false),predecessor_labels({}) {
     //instr 33:   add   global_array_base#32576   GP
     //      1 2   3  4  6                      8  75
     auto idx1 = s.find_first_of("0123456789");
@@ -25,6 +25,8 @@ Instruction::Instruction(const string& s) {
         }
     }
     assert(operands.size() == Opcode::operand_cnt.at(opcode.type));
+
+    this->is_block_leader=this->is_branch()||this->opcode.type==Opcode::Type::ENTER;
 }
 
 string Instruction::ccode(deque<string>& context) {
@@ -111,4 +113,21 @@ string Instruction::ccode(deque<string>& context) {
             return tmp.str();
     }
     return tmp.str();
+}
+
+bool Instruction::is_branch() {
+    switch (this->opcode.type) {
+        case Opcode::Type::BR:
+        case Opcode::Type::BLBC:
+        case Opcode::Type::BLBS:
+            return true;
+        default:
+            return false;
+    }
+    return false;
+}
+
+long long Instruction::branch_target_label(){
+    assert(this->is_branch());
+    return operands.back().inst_label;
 }
