@@ -139,7 +139,7 @@ string Operand::ccode() {
         case Operand::Type::GP:
             return "0";
         case Operand::Type::REG:
-            tmp << "r[" << this->reg_name << "]";
+            tmp << "REG[" << this->reg_name << "]";
             return tmp.str();
         case Operand::Type::LOCAL_VARIABLE:
         case Operand::Type::PARAMETER:
@@ -147,7 +147,7 @@ string Operand::ccode() {
             return tmp.str();
         case Operand::Type::GLOBAL_ADDR:
         case Operand::Type::LOCAL_ADDR:
-            tmp << "(long long)(&" << this->variable_name << ")";
+            tmp << "(long)(&" << this->variable_name << ")";
             return tmp.str();
         case Operand::Type::FUNCTION:
             tmp << "function_" << this->function_id;
@@ -212,31 +212,31 @@ string Instruction::ccode(deque<string>& context) {
     tmp << "inst_" << this->label << ":";
     switch (this->opcode.type) {
         case Opcode::Type::ADD:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " + " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " + " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::SUB:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " - " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " - " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::MUL:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " * " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " * " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::DIV:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " / " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " / " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::MOD:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " % " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " % " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::NEG:
-            tmp << "r[" << this->label << "] = -" << operands[0].ccode() << " ; ";
+            tmp << "REG[" << this->label << "] = -" << operands[0].ccode() << " ; ";
             return tmp.str();
         case Opcode::Type::CMPEQ:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " == " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " == " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::CMPLE:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " <= " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " <= " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::CMPLT:
-            tmp << "r[" << this->label << "] = " << operands[0].ccode() << " < " << operands[1].ccode() << ";";
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " < " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::BR:
             tmp << "goto " << operands[0].ccode() << ";";
@@ -248,11 +248,11 @@ string Instruction::ccode(deque<string>& context) {
             tmp << "if(" << operands[0].ccode() << " !=0) goto " << operands[1].ccode() << ";";
             return tmp.str();
         case Opcode::Type::LOAD:
-            tmp << "r[" << this->label << "] = "
-                << "*((long long *)" << operands[0].ccode() << ");";
+            tmp << "REG[" << this->label << "] = "
+                << "*((long *)" << operands[0].ccode() << ");";
             return tmp.str();
         case Opcode::Type::STORE:
-            tmp << "*( (long long *)" << operands[1].ccode() << ") = " << operands[0].ccode() << ";";
+            tmp << "*( (long *)" << operands[1].ccode() << ") = " << operands[0].ccode() << ";";
             return tmp.str();
         case Opcode::Type::MOVE:
             tmp << operands[1].ccode() << " = " << operands[0].ccode() << ";";
@@ -267,8 +267,8 @@ string Instruction::ccode(deque<string>& context) {
             tmp << "WriteLine();";
             return tmp.str();
         case Opcode::Type::PARAM:
-            context.push_back(operands[0].variable_name);
-            return "";
+            context.push_back(operands[0].ccode());
+            return tmp.str();
         case Opcode::Type::ENTER:
             return "";
         case Opcode::Type::ENTRYPC:
@@ -356,18 +356,23 @@ Function::Function(const vector<Instruction>& instrs, bool _is_main)
 
 string Function::ccode() {
     std::stringstream tmp;
-    tmp << "void function_" << id << "(";
+    if (is_main) {
+        tmp << "void main(";
+    } else {
+        tmp << "void function_" << id << "(";
+    }
+    // function signature
     for (int i = 0; i < params.size(); i++) {
-        tmp << "long long " << params[i].variable_name;
+        tmp << "long " << params[i].variable_name;
         if (params.size() > 1 && i < params.size() - 1) {
             tmp << ",";
         }
     }
     tmp << "){";
     tmp << std::endl;
-
+    // declare local variables
     for (auto& v : local_variables) {
-        tmp << "  long long " << v.variable_name;
+        tmp << "  long " << v.variable_name;
         if (v.size > 8)
             tmp << "[" << v.size / 8 << "]";
         tmp << ";";
@@ -431,4 +436,26 @@ Program::Program(const vector<Instruction>& insts) : instructions(insts), global
         std::cout << v.variable_name << " " << v.size << " " << std::endl;
     }
 #endif
+}
+
+string Program::ccode() {
+    std::stringstream tmp;
+    tmp << "#include <stdio.h>" << std::endl;
+    tmp << "#define long long long" << std::endl;
+    tmp << "#define WriteLine() printf(\"\\n\");" << std::endl;
+    tmp << "#define WriteLong(x) printf(\" %lld\", (long)x);" << std::endl;
+    tmp << "#define ReadLong(a) if (fscanf(stdin, \"%lld\", &a) != 1) a = 0;" << std::endl;
+    tmp << "long REG[" << this->instructions.size() + 4 << "];" << std::endl;
+
+    for (auto& v : global_variables) {
+        tmp << "long " << v.variable_name;
+        if (v.size > 8)
+            tmp << "[" << v.size / 8 << "]";
+        tmp << ";";
+        tmp << std::endl;
+    }
+    for (auto& f : functions) {
+        tmp << f.ccode() << std::endl;
+    }
+    return tmp.str();
 }

@@ -14,7 +14,7 @@ int main() {
         auto operand=Operand(ops[i]);
     }
 */
-    vector<string> raw_insts = {
+   /* vector<string> raw_insts = {
         "instr 2: enter 8",
         "instr 3: cmpeq b#16 0",
         "instr 4: blbs (3) [14]",
@@ -40,6 +40,7 @@ int main() {
     }
     auto f1 = Function(insts);
     std::cout<<f1.ccode()<<std::endl;
+    */
     /*
     for(const auto & v:f1.local_variables){
         std::cout<< v.variable_name<<" "<<v.size<<" "<<std::endl;
@@ -49,14 +50,14 @@ int main() {
         std::cout<< v.variable_name<<" "<<v.size<<" "<<std::endl;
     }*/
 
-/*
+
     vector<Instruction> instructions;
     for (std::string line; std::getline(std::cin, line);) {
         if (line.find("instr") != string::npos)
             instructions.emplace_back(line);
     }
     auto program = Program(instructions);
-    */
+    std::cout<<program.ccode()<<std::endl;
 
     return 0;
 }

@@ -153,5 +153,6 @@ class Program {
     // and save the global variables that appear in the instructions to the vector,
     // so that the addresses are arranged from low to high
     void ScanGlobalVariable();
+    string ccode();
 };
 #endif  //IR_H

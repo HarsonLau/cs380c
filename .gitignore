@@ -2,3 +2,5 @@
 .vscode/
 **/*.csc
 **/csc
+**/*gcc*
+**/*3addr*
