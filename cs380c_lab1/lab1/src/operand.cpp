@@ -106,35 +106,35 @@ string Operand::ccode() {
     return tmp.str();
 }
 
-string Operand::icode(){
+string Operand::icode() {
     std::stringstream tmp;
-    switch (this->type){
+    switch (this->type) {
         case Operand::Type::FP:
             return "FP";
         case Operand::Type::GP:
             return "GP";
         case Operand::Type::REG:
-            tmp<<"("<<this->reg_name<<")";
+            tmp << "(" << this->reg_name << ")";
             return tmp.str();
         case Operand::Type::LOCAL_VARIABLE:
         case Operand::Type::PARAMETER:
-            tmp << this->variable_name<<"#"<<this->offset;
+            tmp << this->variable_name << "#" << this->offset;
             return tmp.str();
         case Operand::Type::GLOBAL_ADDR:
         case Operand::Type::LOCAL_ADDR:
-            tmp<<this->variable_name<<"_base#"<<this->offset;
+            tmp << this->variable_name << "_base#" << this->offset;
             return tmp.str();
         case Operand::Type::FUNCTION:
-            tmp << "[" << this->function_id<<"]";
+            tmp << "[" << this->function_id << "]";
             return tmp.str();
         case Operand::Type::FIELD_OFFSET:
-            tmp<<this->variable_name<<"_offset#"<<this->offset;
+            tmp << this->variable_name << "_offset#" << this->offset;
             return tmp.str();
         case Operand::Type::CONSTANT:
             tmp << this->constant;
             return tmp.str();
-        case Operand::Type::LABEL: 
-            tmp << "["<<this->inst_label<<"]";
+        case Operand::Type::LABEL:
+            tmp << "[" << this->inst_label << "]";
             return tmp.str();
     }
     return tmp.str();

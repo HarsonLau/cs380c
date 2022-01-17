@@ -49,7 +49,7 @@ void Function::scan_parameters(vector<Instruction>& instrs) {
 }
 
 Function::Function(vector<Instruction>& instrs, bool _is_main)
-    :  is_main(_is_main), id(0) {
+    : is_main(_is_main), id(0) {
     assert(instrs[0].opcode.type == Opcode::Type::ENTER);
     this->local_var_size = instrs[0].operands[0].constant;
     this->id = instrs[0].label;
@@ -59,18 +59,18 @@ Function::Function(vector<Instruction>& instrs, bool _is_main)
     this->scan_parameters(instrs);
     this->scan_block_leaders(instrs);
 
-    vector<Instruction> tmp={};
-    for(auto &inst:instrs){
-        if(inst.is_block_leader&&!tmp.empty()){
+    vector<Instruction> tmp = {};
+    for (auto& inst : instrs) {
+        if (inst.is_block_leader && !tmp.empty()) {
             basic_blocks.emplace_back(tmp);
-            tmp={};
+            tmp = {};
         }
         tmp.push_back(inst);
     }
-    if(!tmp.empty())
+    if (!tmp.empty())
         basic_blocks.emplace_back(tmp);
-    //fixme
-    //this->instructions = instrs;
+        //fixme
+        //this->instructions = instrs;
 
 #ifdef FUNCTION_DEBUG
     std::cout << "function" << this->id << std::endl;
@@ -109,10 +109,10 @@ string Function::ccode() {
         tmp << ";";
         tmp << std::endl;
     }
-    
-   for(auto &bb:basic_blocks){
-       tmp<<bb.ccode()<<std::endl;
-   }
+
+    for (auto& bb : basic_blocks) {
+        tmp << bb.ccode() << std::endl;
+    }
 
     tmp << "}";
     return tmp.str();
@@ -151,24 +151,24 @@ void Function::scan_block_leaders(vector<Instruction>& instrs) {
     std::cout << std::endl;
 #endif
 }
-string Function::icode(){
+string Function::icode() {
     std::stringstream tmp;
-    for(auto & bb:basic_blocks){
-        tmp<<bb.icode();
+    for (auto& bb : basic_blocks) {
+        tmp << bb.icode();
     }
     return tmp.str();
 }
-string Function::cfg(){
+string Function::cfg() {
     std::stringstream tmp;
-    tmp<<"Function: "<<this->id<<std::endl;
-    tmp<<"Basic blocks:";
-    for(auto & bb: basic_blocks){
-        tmp<<" "<<bb.instructions.front().label;
+    tmp << "Function: " << this->id << std::endl;
+    tmp << "Basic blocks:";
+    for (auto& bb : basic_blocks) {
+        tmp << " " << bb.instructions.front().label;
     }
-    tmp<<std::endl;
-    tmp<<"CFG:"<<std::endl;
-    for(auto & bb:basic_blocks){
-        tmp<<bb.cfg();
+    tmp << std::endl;
+    tmp << "CFG:" << std::endl;
+    for (auto& bb : basic_blocks) {
+        tmp << bb.cfg();
     }
     return tmp.str();
 }

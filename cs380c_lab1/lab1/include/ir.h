@@ -164,7 +164,7 @@ class Function {
     long long local_var_size;  // size of local variables in bytes
     long long param_size;      // size of parameters in bytes
     long long id;
-    Function() : local_variables({}), params({}),local_var_size(0), param_size(0), is_main(false){};
+    Function() : local_variables({}), params({}), local_var_size(0), param_size(0), is_main(false){};
     // the first instruction must be enter ,the last must be ret
     Function(vector<Instruction>& instrs, bool _is_main = false);
     string ccode();

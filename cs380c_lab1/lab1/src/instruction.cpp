@@ -1,5 +1,5 @@
 #include "ir.h"
-Instruction::Instruction(const string& s):is_block_leader(false),predecessor_labels({}) {
+Instruction::Instruction(const string& s) : is_block_leader(false), predecessor_labels({}) {
     //instr 33:   add   global_array_base#32576   GP
     //      1 2   3  4  6                      8  75
     auto idx1 = s.find_first_of("0123456789");
@@ -27,11 +27,11 @@ Instruction::Instruction(const string& s):is_block_leader(false),predecessor_lab
     assert(operands.size() == Opcode::operand_cnt.at(opcode.type));
 }
 
-deque<string> Instruction::context={};
+deque<string> Instruction::context = {};
 
 string Instruction::ccode() {
     std::stringstream tmp;
-    if(this->predecessor_labels.size()>0)
+    if (this->predecessor_labels.size() > 0)
         tmp << "inst_" << this->label << ":";
     switch (this->opcode.type) {
         case Opcode::Type::ADD:
@@ -128,17 +128,17 @@ bool Instruction::is_branch() {
     return false;
 }
 
-long long Instruction::branch_target_label(){
+long long Instruction::branch_target_label() {
     assert(this->is_branch());
     return operands.back().inst_label;
 }
 
-string Instruction::icode(){
+string Instruction::icode() {
     std::stringstream tmp;
-    tmp<<"    instr "<<this->label<<": "<<Opcode::opcode_name[this->opcode.type];
-    for(auto &op:operands){
-        tmp<<" "<<op.icode();
+    tmp << "    instr " << this->label << ": " << Opcode::opcode_name[this->opcode.type];
+    for (auto& op : operands) {
+        tmp << " " << op.icode();
     }
-    tmp<<std::endl;
+    tmp << std::endl;
     return tmp.str();
 }

@@ -81,17 +81,17 @@ string Program::ccode() {
     }
     return tmp.str();
 }
-string Program::icode(){
+string Program::icode() {
     std::stringstream tmp;
-    for(auto & func:functions){
-        tmp<<func.icode();
+    for (auto& func : functions) {
+        tmp << func.icode();
     }
     return tmp.str();
 }
-string Program::cfg(){
+string Program::cfg() {
     std::stringstream tmp;
-    for(auto & func:functions){
-        tmp<<func.cfg();
+    for (auto& func : functions) {
+        tmp << func.cfg();
     }
     return tmp.str();
 }
