@@ -131,12 +131,12 @@ class Instruction {
     vector<long long> predecessor_labels;
 };
 
-class Basic_block {
+class BasicBlock {
    public:
     vector<Instruction> instructions;
     vector<long long> predecessor_labels;
     vector<long long> successor_labels;
-    Basic_block(vector<Instruction>& instrs);
+    BasicBlock(vector<Instruction>& instrs);
     string ccode();
 };
 
@@ -155,12 +155,12 @@ class Function {
     bool is_main;
     vector<Variable> local_variables;
     vector<Variable> params;
-    vector<Instruction> instructions;
+    vector<BasicBlock> basic_blocks;
     //deque<string> context;     // Arguments when calling a function inside this function
     long long local_var_size;  // size of local variables in bytes
     long long param_size;      // size of parameters in bytes
     long long id;
-    Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0), is_main(false){};
+    Function() : local_variables({}), params({}),local_var_size(0), param_size(0), is_main(false){};
     // the first instruction must be enter ,the last must be ret
     Function(vector<Instruction>& instrs, bool _is_main = false);
     string ccode();
