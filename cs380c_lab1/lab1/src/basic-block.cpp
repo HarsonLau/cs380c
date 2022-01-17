@@ -13,3 +13,10 @@ string BasicBlock::ccode() {
     }
     return tmp.str();
 }
+string BasicBlock::icode(){
+    std::stringstream tmp;
+    for(auto & inst:instructions){
+        tmp<<inst.icode();
+    }
+    return tmp.str();
+}

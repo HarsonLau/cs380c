@@ -151,3 +151,10 @@ void Function::scan_block_leaders(vector<Instruction>& instrs) {
     std::cout << std::endl;
 #endif
 }
+string Function::icode(){
+    std::stringstream tmp;
+    for(auto & bb:basic_blocks){
+        tmp<<bb.icode();
+    }
+    return tmp.str();
+}

@@ -81,3 +81,10 @@ string Program::ccode() {
     }
     return tmp.str();
 }
+string Program::icode(){
+    std::stringstream tmp;
+    for(auto & func:functions){
+        tmp<<func.icode();
+    }
+    return tmp.str();
+}

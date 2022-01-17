@@ -132,3 +132,13 @@ long long Instruction::branch_target_label(){
     assert(this->is_branch());
     return operands.back().inst_label;
 }
+
+string Instruction::icode(){
+    std::stringstream tmp;
+    tmp<<"    instr "<<this->label<<": "<<Opcode::opcode_name[this->opcode.type];
+    for(auto &op:operands){
+        tmp<<" "<<op.icode();
+    }
+    tmp<<std::endl;
+    return tmp.str();
+}

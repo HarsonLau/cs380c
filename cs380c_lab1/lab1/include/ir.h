@@ -52,6 +52,7 @@ class Operand {
     Operand() : type(Operand::Type::INVALID){};
 
     string ccode();
+    string icode();
     // Read information from a string and build an IR representation
     // Assume that the input string does not contain spaces
     Operand(const string& s, bool is_function = false);
@@ -123,6 +124,7 @@ class Instruction {
     // Whether it is a basic block leader is not set in the constructor
     Instruction(const string& s);
     string ccode();
+    string icode();
     bool is_branch();
     // Whether it is a basic block leader,  not set in the constructor
     bool is_block_leader;
@@ -138,6 +140,7 @@ class BasicBlock {
     vector<long long> successor_labels;
     BasicBlock(vector<Instruction>& instrs);
     string ccode();
+    string icode();
 };
 
 class Function {
@@ -164,6 +167,7 @@ class Function {
     // the first instruction must be enter ,the last must be ret
     Function(vector<Instruction>& instrs, bool _is_main = false);
     string ccode();
+    string icode();
 };
 
 class Program {
@@ -177,5 +181,6 @@ class Program {
     Program(vector<Instruction>& insts);
     long long instruction_cnt;
     string ccode();
+    string icode();
 };
 #endif  //IR_H
