@@ -27,7 +27,9 @@ Instruction::Instruction(const string& s):is_block_leader(false),predecessor_lab
     assert(operands.size() == Opcode::operand_cnt.at(opcode.type));
 }
 
-string Instruction::ccode(deque<string>& context) {
+deque<string> Instruction::context={};
+
+string Instruction::ccode() {
     std::stringstream tmp;
     if(this->predecessor_labels.size()>0)
         tmp << "inst_" << this->label << ":";
@@ -88,7 +90,7 @@ string Instruction::ccode(deque<string>& context) {
             tmp << "WriteLine();";
             return tmp.str();
         case Opcode::Type::PARAM:
-            context.push_back(operands[0].ccode());
+            Instruction::context.push_back(operands[0].ccode());
             return tmp.str();
         case Opcode::Type::ENTER:
             return "";
@@ -97,10 +99,10 @@ string Instruction::ccode(deque<string>& context) {
         case Opcode::Type::CALL:
             tmp << operands[0].ccode();
             tmp << "(";
-            while (!context.empty()) {
-                tmp << context.front();
-                context.pop_front();
-                if (!context.empty())
+            while (!Instruction::context.empty()) {
+                tmp << Instruction::context.front();
+                Instruction::context.pop_front();
+                if (!Instruction::context.empty())
                     tmp << ",";
             }
             tmp << ");";

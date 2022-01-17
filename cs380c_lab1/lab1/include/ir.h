@@ -118,10 +118,11 @@ class Instruction {
     Opcode opcode;
     vector<Operand> operands;
     long long label;
+    static deque<string> context;
     Instruction() = delete;
     // Whether it is a basic block leader is not set in the constructor
     Instruction(const string& s);
-    string ccode(deque<string>& context);
+    string ccode();
     bool is_branch();
     // Whether it is a basic block leader,  not set in the constructor
     bool is_block_leader;
@@ -155,11 +156,11 @@ class Function {
     vector<Variable> local_variables;
     vector<Variable> params;
     vector<Instruction> instructions;
-    deque<string> context;     // Arguments when calling a function inside this function
+    //deque<string> context;     // Arguments when calling a function inside this function
     long long local_var_size;  // size of local variables in bytes
     long long param_size;      // size of parameters in bytes
     long long id;
-    Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0), is_main(false), context({}){};
+    Function() : local_variables({}), params({}), instructions({}), local_var_size(0), param_size(0), is_main(false){};
     // the first instruction must be enter ,the last must be ret
     Function(vector<Instruction>& instrs, bool _is_main = false);
     string ccode();

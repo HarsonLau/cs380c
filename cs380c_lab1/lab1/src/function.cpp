@@ -100,7 +100,7 @@ string Function::ccode() {
         tmp << std::endl;
     }
     for (auto& inst : instructions) {
-        tmp << "  " << inst.ccode(context) << std::endl;
+        tmp << "  " << inst.ccode() << std::endl;
     }
 
     tmp << "}";
