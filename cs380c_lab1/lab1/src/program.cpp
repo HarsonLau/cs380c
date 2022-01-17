@@ -88,3 +88,10 @@ string Program::icode(){
     }
     return tmp.str();
 }
+string Program::cfg(){
+    std::stringstream tmp;
+    for(auto & func:functions){
+        tmp<<func.cfg();
+    }
+    return tmp.str();
+}

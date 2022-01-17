@@ -141,6 +141,7 @@ class BasicBlock {
     BasicBlock(vector<Instruction>& instrs);
     string ccode();
     string icode();
+    string cfg();
 };
 
 class Function {
@@ -168,6 +169,7 @@ class Function {
     Function(vector<Instruction>& instrs, bool _is_main = false);
     string ccode();
     string icode();
+    string cfg();
 };
 
 class Program {
@@ -182,5 +184,6 @@ class Program {
     long long instruction_cnt;
     string ccode();
     string icode();
+    string cfg();
 };
 #endif  //IR_H

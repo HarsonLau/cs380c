@@ -158,3 +158,17 @@ string Function::icode(){
     }
     return tmp.str();
 }
+string Function::cfg(){
+    std::stringstream tmp;
+    tmp<<"Function: "<<this->id<<std::endl;
+    tmp<<"Basic blocks:";
+    for(auto & bb: basic_blocks){
+        tmp<<" "<<bb.instructions.front().label;
+    }
+    tmp<<std::endl;
+    tmp<<"CFG:"<<std::endl;
+    for(auto & bb:basic_blocks){
+        tmp<<bb.cfg();
+    }
+    return tmp.str();
+}
