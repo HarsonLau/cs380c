@@ -13,7 +13,8 @@ map<Operand::Type, string> Operand::type_name = {
     {FUNCTION, "function"},
     {END, "end"},
     {GLOBAL_ADDR, "global variable address"},
-    {PARAMETER, "parameter"}};
+    {PARAMETER, "parameter"},
+    {OPT_VARIABLE,"variable produced by optimization"}};
 
 Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0), variable_name("") {
     if (s.find('(') != string::npos) {
@@ -83,6 +84,7 @@ string Operand::ccode() {
         case Operand::Type::REG:
             tmp << "REG[" << this->reg_name << "]";
             return tmp.str();
+        case Operand::Type::OPT_VARIABLE:
         case Operand::Type::LOCAL_VARIABLE:
         case Operand::Type::PARAMETER:
             tmp << this->variable_name;
@@ -116,6 +118,7 @@ string Operand::icode() {
         case Operand::Type::REG:
             tmp << "(" << this->reg_name << ")";
             return tmp.str();
+        case Operand::Type::OPT_VARIABLE:
         case Operand::Type::LOCAL_VARIABLE:
         case Operand::Type::PARAMETER:
             tmp << this->variable_name << "#" << this->offset;

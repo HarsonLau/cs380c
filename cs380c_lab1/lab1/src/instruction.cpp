@@ -111,6 +111,9 @@ string Instruction::ccode() {
             tmp << "return ;";
             return tmp.str();
         case Opcode::Type::NOP:
+            return tmp.str();   // Can't return empty string directly, because jump labels may need to be output
+        case Opcode::Type::ASSIGN:
+            tmp << "REG[" << this->label << "] = " << operands[0].ccode() << ";";
             return tmp.str();
     }
     return tmp.str();
@@ -141,4 +144,8 @@ string Instruction::icode() {
     }
     tmp << std::endl;
     return tmp.str();
+}
+void Instruction::to_nop() {
+    this->opcode.type = Opcode::Type::NOP;
+    this->operands.clear();
 }

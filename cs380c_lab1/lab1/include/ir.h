@@ -29,10 +29,11 @@ class Operand {
         CONSTANT,
         ADDR_OFFSET,
         FIELD_OFFSET,
-        LOCAL_VARIABLE,  // local variable in a function
-        LOCAL_ADDR,      // address offser of a local variable
-        GLOBAL_ADDR,
-        PARAMETER,  //function parameter
+        LOCAL_VARIABLE,  // local variable in a function (long), translate to variable name
+        OPT_VARIABLE,    // variables produced by optimization, translate to variable name
+        LOCAL_ADDR,      // address of a local variable (array, struct), translate to &(a)
+        GLOBAL_ADDR,     // address of a global variable(long,array,struct), translate to &(a)
+        PARAMETER,       // function parameter, translate to parameter name
         REG,
         LABEL,
         FUNCTION,
@@ -74,9 +75,9 @@ class Opcode {
         BR,
         BLBC,
         BLBS,
-        LOAD,
-        STORE,
-        MOVE,
+        LOAD,   //take the operand as a memory address,and take out the data in this address and put it into a virtual register
+        STORE,  //treat the second operand as a memory address and store the first operand in this memory address
+        MOVE,   //assign the first operand to the second operand
         READ,
         WRITE,
         WRL,
@@ -86,6 +87,7 @@ class Opcode {
         CALL,
         RET,
         NOP,
+        ASSIGN,  //assign the operand to the virtual register corresponding to this instruction
         END
     };
     static map<Opcode::Type, int> operand_cnt;
@@ -131,6 +133,8 @@ class Instruction {
     long long branch_target_label();
     // Not set in the constructor
     vector<long long> predecessor_labels;
+    // set the Instruction to nop
+    void to_nop();
 };
 
 class BasicBlock {
@@ -142,6 +146,8 @@ class BasicBlock {
     string ccode();
     string icode();
     string cfg();
+    // perform peephole optimization
+    void peephole();
 };
 
 class Function {

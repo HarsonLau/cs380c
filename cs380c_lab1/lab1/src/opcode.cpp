@@ -27,7 +27,8 @@ map<Opcode::Type, string> Opcode::opcode_name = {
     {CALL, "call"},
     {RET, "ret"},
     {NOP, "nop"},
-    {END, "end"}};
+    {END, "end"},
+    {ASSIGN,"assign"}};
 
 map<Opcode::Type, int> Opcode::operand_cnt = {
     {INVALID, 0},
@@ -55,7 +56,8 @@ map<Opcode::Type, int> Opcode::operand_cnt = {
     {CALL, 1},
     {RET, 1},
     {NOP, 0},
-    {END, 0}};
+    {END, 0},
+    {ASSIGN,1}};
 
 //match input with opcode to determine type
 Opcode::Opcode(const string& s) : type(Opcode::Type::INVALID) {

@@ -10,7 +10,7 @@ int main() {
             instructions.emplace_back(line);
     }
     auto program = Program(instructions);
-    std::cout << program.cfg() << std::endl;
+    std::cout << program.ccode() << std::endl;
 
     return 0;
 }
