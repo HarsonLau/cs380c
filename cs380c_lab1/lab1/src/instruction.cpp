@@ -25,13 +25,12 @@ Instruction::Instruction(const string& s):is_block_leader(false),predecessor_lab
         }
     }
     assert(operands.size() == Opcode::operand_cnt.at(opcode.type));
-
-    this->is_block_leader=this->is_branch()||this->opcode.type==Opcode::Type::ENTER;
 }
 
 string Instruction::ccode(deque<string>& context) {
     std::stringstream tmp;
-    tmp << "inst_" << this->label << ":";
+    if(this->predecessor_labels.size()>0)
+        tmp << "inst_" << this->label << ":";
     switch (this->opcode.type) {
         case Opcode::Type::ADD:
             tmp << "REG[" << this->label << "] = " << operands[0].ccode() << " + " << operands[1].ccode() << ";";

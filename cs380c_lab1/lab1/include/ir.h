@@ -19,6 +19,7 @@ using std::vector;
 //#define OPCODE_DEBUG
 //#define PROGRAM_DEBUG
 //#define FUNCTION_DEBUG
+//#define BASIC_LEADER_DEBUG
 class Operand {
    public:
     enum Type {
@@ -118,16 +119,24 @@ class Instruction {
     vector<Operand> operands;
     long long label;
     Instruction() = delete;
+    // Whether it is a basic block leader is not set in the constructor
     Instruction(const string& s);
     string ccode(deque<string>& context);
     bool is_branch();
+    // Whether it is a basic block leader,  not set in the constructor
     bool is_block_leader;
     long long branch_target_label();
+    // Not set in the constructor
     vector<long long> predecessor_labels;
 };
 
 class Basic_block {
    public:
+    vector<Instruction> instructions;
+    vector<long long> predecessor_labels;
+    vector<long long> successor_labels;
+    Basic_block(vector<Instruction>& instrs);
+    string ccode();
 };
 
 class Function {
@@ -146,7 +155,7 @@ class Function {
     vector<Variable> local_variables;
     vector<Variable> params;
     vector<Instruction> instructions;
-    deque<string> context;     //Arguments when calling a function inside this function
+    deque<string> context;     // Arguments when calling a function inside this function
     long long local_var_size;  // size of local variables in bytes
     long long param_size;      // size of parameters in bytes
     long long id;

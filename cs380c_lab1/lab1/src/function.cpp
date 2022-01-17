@@ -59,6 +59,9 @@ Function::Function(vector<Instruction>& instrs, bool _is_main)
     this->scan_parameters(instrs);
     this->scan_block_leaders(instrs);
 
+    //fixme
+    this->instructions = instrs;
+
 #ifdef FUNCTION_DEBUG
     std::cout << "function" << this->id << std::endl;
     std::cout << "--params---" << std::endl;
@@ -72,7 +75,7 @@ Function::Function(vector<Instruction>& instrs, bool _is_main)
 #endif
 }
 
-string Function::ccode(){
+string Function::ccode() {
     std::stringstream tmp;
     if (is_main) {
         tmp << "void main(";
@@ -106,7 +109,7 @@ string Function::ccode(){
 
 void Function::scan_block_leaders(vector<Instruction>& instrs) {
     const int n = instrs.size();
-    
+    instrs.front().is_block_leader = true;
     for (int i = 0; i < n; i++) {
         if (instrs[i].is_branch()) {
             // a branch instruction cannot be the last instruction of a function
@@ -117,8 +120,23 @@ void Function::scan_block_leaders(vector<Instruction>& instrs) {
             long long target_index = target_label - own_label + i;
             //the target instruction must be in the same function
             assert(target_index >= 0 && target_index < n);
-            assert(instrs[target_index].label==target_label);
+            assert(instrs[target_index].label == target_label);
             instrs[target_index].predecessor_labels.push_back(own_label);
+            instrs[target_index].is_block_leader = true;
+        } else if (instrs[i].opcode.type == Opcode::Type::CALL) {
+            // the last instruction must be a ret
+            // so a call instruction must not be the last one
+            assert(i + 1 < n);
+            instrs[i + 1].is_block_leader = true;
         }
     }
+#ifdef BASIC_LEADER_DEBUG
+    std::cout << "basic block leaders:" << std::endl;
+    std::cout << "      ";
+    for (auto& inst : instrs) {
+        if (inst.is_block_leader)
+            std::cout << inst.label << " ";
+    }
+    std::cout << std::endl;
+#endif
 }
