@@ -30,7 +30,7 @@ class Operand {
         ADDR_OFFSET,
         FIELD_OFFSET,
         LOCAL_VARIABLE,  // local variable in a function (long), translate to variable name
-        OPT_VARIABLE,    // variables produced by optimization, translate to variable name
+        GLOBAL_VARIABLE,    // variables produced by optimization, translate to variable name
         LOCAL_ADDR,      // address of a local variable (array, struct), translate to &(a)
         GLOBAL_ADDR,     // address of a global variable(long,array,struct), translate to &(a)
         PARAMETER,       // function parameter, translate to parameter name

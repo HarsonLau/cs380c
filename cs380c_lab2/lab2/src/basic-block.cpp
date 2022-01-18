@@ -62,12 +62,14 @@ void BasicBlock::peephole() {
                 if (next_iter->opcode.type == Opcode::Type::LOAD) {
                     next_iter->opcode.type = Opcode::Type::ASSIGN;
                     next_iter->operands[0] = iter->operands[0];
-                    next_iter->operands[0].type = Operand::Type::OPT_VARIABLE;
+                    assert(iter->operands[0].type==Operand::Type::GLOBAL_ADDR);
+                    next_iter->operands[0].type = Operand::Type::GLOBAL_VARIABLE;
                     iter->to_nop();
                 } else if (next_iter->opcode.type == Opcode::Type::STORE) {
                     next_iter->opcode.type = Opcode::Type::MOVE;
                     next_iter->operands[1] = iter->operands[0];
-                    next_iter->operands[1].type = Operand::Type::OPT_VARIABLE;
+                    assert(iter->operands[0].type==Operand::Type::GLOBAL_ADDR);
+                    next_iter->operands[1].type = Operand::Type::GLOBAL_VARIABLE;
                     iter->to_nop();
                 }
             }
