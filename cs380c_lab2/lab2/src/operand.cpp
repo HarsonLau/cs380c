@@ -75,7 +75,7 @@ Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0)
 #endif
 }
 
-string Operand::ccode() {
+string Operand::ccode() const{
     std::stringstream tmp;
     switch (this->type) {
         case Operand::Type::FP:
@@ -108,7 +108,7 @@ string Operand::ccode() {
     return tmp.str();
 }
 
-string Operand::icode() {
+string Operand::icode()const {
     std::stringstream tmp;
     switch (this->type) {
         case Operand::Type::FP:

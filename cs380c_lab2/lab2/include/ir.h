@@ -8,18 +8,23 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 using std::array;
 using std::deque;
 using std::map;
 using std::set;
 using std::string;
+using std::unordered_map;
+using std::unordered_set;
 using std::vector;
 //#define OPERAND_DEBUG
 //#define OPCODE_DEBUG
 //#define PROGRAM_DEBUG
 //#define FUNCTION_DEBUG
 //#define BASIC_LEADER_DEBUG
+
 class Operand {
    public:
     enum Type {
@@ -29,11 +34,11 @@ class Operand {
         CONSTANT,
         ADDR_OFFSET,
         FIELD_OFFSET,
-        LOCAL_VARIABLE,  // local variable in a function (long), translate to variable name
-        GLOBAL_VARIABLE,    // variables produced by optimization, translate to variable name
-        LOCAL_ADDR,      // address of a local variable (array, struct), translate to &(a)
-        GLOBAL_ADDR,     // address of a global variable(long,array,struct), translate to &(a)
-        PARAMETER,       // function parameter, translate to parameter name
+        LOCAL_VARIABLE,   // local variable in a function (long), translate to variable name
+        GLOBAL_VARIABLE,  // variables produced by optimization, translate to variable name
+        LOCAL_ADDR,       // address of a local variable (array, struct), translate to &(a)
+        GLOBAL_ADDR,      // address of a global variable(long,array,struct), translate to &(a)
+        PARAMETER,        // function parameter, translate to parameter name
         REG,
         LABEL,
         FUNCTION,
@@ -52,8 +57,8 @@ class Operand {
     static map<Operand::Type, string> type_name;
     Operand() : type(Operand::Type::INVALID){};
 
-    string ccode();
-    string icode();
+    string ccode() const;
+    string icode() const;
     // Read information from a string and build an IR representation
     // Assume that the input string does not contain spaces
     Operand(const string& s, bool is_function = false);
@@ -125,16 +130,22 @@ class Instruction {
     Instruction() = delete;
     // Whether it is a basic block leader is not set in the constructor
     Instruction(const string& s);
-    string ccode();
-    string icode();
-    bool is_branch();
+    string ccode() const;
+    string icode() const;
+    bool is_branch() const;
     // Whether it is a basic block leader,  not set in the constructor
     bool is_block_leader;
-    long long branch_target_label();
+    long long branch_target_label() const;
     // Not set in the constructor
     vector<long long> predecessor_labels;
     // set the Instruction to nop
     void to_nop();
+    string get_def() const;
+    bool is_def() const;
+    bool is_constant_def() const;
+
+    // add 1 2 -> assign 3
+    void peephole2();
 };
 
 class BasicBlock {
@@ -143,11 +154,17 @@ class BasicBlock {
     vector<long long> predecessor_labels;
     vector<long long> successor_labels;
     BasicBlock(vector<Instruction>& instrs);
-    string ccode();
-    string icode();
-    string cfg();
+    string ccode() const;
+    string icode() const;
+    string cfg() const;
+    long long first_label() const;  // The label of the first instruction in this basic block
+    long long last_label() const;   // The label of the last instruction in this basic block
+    long long size() const;         // The number of instructions in this basic block
     // perform peephole optimization
     void peephole();
+
+    // add 1 2 -> assign 3
+    void peephole2();
 };
 
 class Function {
@@ -166,16 +183,17 @@ class Function {
     vector<Variable> local_variables;
     vector<Variable> params;
     vector<BasicBlock> basic_blocks;
-    //deque<string> context;     // Arguments when calling a function inside this function
-    long long local_var_size;  // size of local variables in bytes
-    long long param_size;      // size of parameters in bytes
+    unordered_map<long long, int> idx_of_bb;  // index of basic blocks in the vector, initialized in constructor
+    long long local_var_size;                 // size of local variables in bytes
+    long long param_size;                     // size of parameters in bytes
     long long id;
     Function() : local_variables({}), params({}), local_var_size(0), param_size(0), is_main(false){};
     // the first instruction must be enter ,the last must be ret
     Function(vector<Instruction>& instrs, bool _is_main = false);
-    string ccode();
-    string icode();
-    string cfg();
+    string ccode() const;
+    string icode() const;
+    string cfg() const;
+    void scp();  //simple constant propagation using reaching definition analysis
 };
 
 class Program {
@@ -188,8 +206,9 @@ class Program {
     vector<Function> functions;
     Program(vector<Instruction>& insts);
     long long instruction_cnt;
-    string ccode();
-    string icode();
-    string cfg();
+    string ccode() const;
+    string icode() const;
+    string cfg() const;
+    void scp();  //simple constant propagation using reaching definition analysis
 };
 #endif  //IR_H

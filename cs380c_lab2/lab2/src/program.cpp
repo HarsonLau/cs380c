@@ -60,7 +60,7 @@ Program::Program(vector<Instruction>& insts) : instruction_cnt(insts.size()), gl
 #endif
 }
 
-string Program::ccode() {
+string Program::ccode()const {
     std::stringstream tmp;
     tmp << "#include <stdio.h>" << std::endl;
     tmp << "#define long long long" << std::endl;
@@ -81,17 +81,22 @@ string Program::ccode() {
     }
     return tmp.str();
 }
-string Program::icode() {
+string Program::icode() const{
     std::stringstream tmp;
     for (auto& func : functions) {
         tmp << func.icode();
     }
     return tmp.str();
 }
-string Program::cfg() {
+string Program::cfg() const{
     std::stringstream tmp;
     for (auto& func : functions) {
         tmp << func.cfg();
     }
     return tmp.str();
+}
+void Program::scp(){
+    for(auto & func:functions){
+        func.scp();
+    }
 }

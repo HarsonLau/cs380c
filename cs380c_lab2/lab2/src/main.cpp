@@ -10,6 +10,7 @@ int main() {
             instructions.emplace_back(line);
     }
     auto program = Program(instructions);
+    program.scp();
     std::cout << program.cfg();
 
     return 0;

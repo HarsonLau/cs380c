@@ -29,7 +29,7 @@ Instruction::Instruction(const string& s) : is_block_leader(false), predecessor_
 
 deque<string> Instruction::context = {};
 
-string Instruction::ccode() {
+string Instruction::ccode() const {
     std::stringstream tmp;
     if (this->predecessor_labels.size() > 0)
         tmp << "inst_" << this->label << ":";
@@ -111,7 +111,7 @@ string Instruction::ccode() {
             tmp << "return ;";
             return tmp.str();
         case Opcode::Type::NOP:
-            return tmp.str();   // Can't return empty string directly, because jump labels may need to be output
+            return tmp.str();  // Can't return empty string directly, because jump labels may need to be output
         case Opcode::Type::ASSIGN:
             tmp << "REG[" << this->label << "] = " << operands[0].ccode() << ";";
             return tmp.str();
@@ -119,7 +119,7 @@ string Instruction::ccode() {
     return tmp.str();
 }
 
-bool Instruction::is_branch() {
+bool Instruction::is_branch() const {
     switch (this->opcode.type) {
         case Opcode::Type::BR:
         case Opcode::Type::BLBC:
@@ -131,12 +131,12 @@ bool Instruction::is_branch() {
     return false;
 }
 
-long long Instruction::branch_target_label() {
+long long Instruction::branch_target_label() const {
     assert(this->is_branch());
     return operands.back().inst_label;
 }
 
-string Instruction::icode() {
+string Instruction::icode() const {
     std::stringstream tmp;
     tmp << "    instr " << this->label << ": " << Opcode::opcode_name[this->opcode.type];
     for (auto& op : operands) {
@@ -148,4 +148,95 @@ string Instruction::icode() {
 void Instruction::to_nop() {
     this->opcode.type = Opcode::Type::NOP;
     this->operands.clear();
+}
+string Instruction::get_def() const {
+    switch (this->opcode.type) {
+        case Opcode::Type::MOVE:
+            return operands.back().icode();
+
+        case Opcode::Type::BLBC:
+        case Opcode::Type::BLBS:
+        case Opcode::Type::BR:
+        case Opcode::Type::CALL:
+        case Opcode::Type::END:
+        case Opcode::Type::ENTER:
+        case Opcode::Type::ENTRYPC:
+        case Opcode::Type::INVALID:
+        case Opcode::Type::NOP:
+        case Opcode::Type::PARAM:
+        case Opcode::Type::RET:
+        case Opcode::Type::STORE:
+        case Opcode::Type::WRITE:
+        case Opcode::Type::WRL:
+            return "";
+
+        case Opcode::Type::ADD:
+        case Opcode::Type::ASSIGN:
+        case Opcode::Type::CMPEQ:
+        case Opcode::Type::CMPLE:
+        case Opcode::Type::CMPLT:
+        case Opcode::Type::DIV:
+        case Opcode::Type::LOAD:
+        case Opcode::Type::MOD:
+        case Opcode::Type::MUL:
+        case Opcode::Type::NEG:
+        case Opcode::Type::READ:
+        case Opcode::Type::SUB:
+            std::stringstream tmp;
+            tmp << "(" << this->label << ")";
+            return tmp.str();
+    }
+    return "";
+}
+
+bool Instruction::is_def() const {
+    return this->get_def().size() > 0;
+}
+
+bool Instruction::is_constant_def() const {
+    if (opcode.type == Opcode::Type::MOVE || opcode.type == Opcode::Type::ASSIGN) {
+        if (operands.front().type == Operand::Type::CONSTANT) {  //the operand is a immediate number
+            return true;
+        }
+    }
+    return false;
+}
+
+void Instruction::peephole2() {
+    if (operands.size() != 2)
+        return;
+    for (auto& operand : operands) {
+        if (operand.type != Operand::Type::CONSTANT)
+            return;
+    }
+    long long n_val = 0;
+    switch (opcode.type) {
+        case Opcode::Type::ADD:
+            n_val = operands[0].constant + operands[1].constant;
+            break;
+        case Opcode::Type::SUB:
+            n_val = operands[0].constant - operands[1].constant;
+            break;
+        case Opcode::Type::MUL:
+            n_val = operands[0].constant * operands[1].constant;
+            break;
+        case Opcode::Type::DIV:
+            n_val = operands[0].constant / operands[1].constant;
+            break;
+        case Opcode::Type::CMPLT:
+            n_val = operands[0].constant < operands[1].constant;
+            break;
+        case Opcode::Type::CMPEQ:
+            n_val = operands[0].constant == operands[1].constant;
+            break;
+        case Opcode::Type::CMPLE:
+            n_val = operands[0].constant <= operands[1].constant;
+            break;
+
+        default:
+            return;
+    }
+    opcode.type = Opcode::Type::ASSIGN;
+    operands[0].constant = n_val;
+    operands.resize(1);
 }

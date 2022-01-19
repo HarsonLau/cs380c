@@ -12,23 +12,24 @@ BasicBlock::BasicBlock(vector<Instruction>& instrs) : instructions(instrs), pred
     auto iter = std::unique(successor_labels.begin(), successor_labels.end());
     successor_labels = vector<long long>(successor_labels.begin(), iter);
     peephole();
+    assert(last_label()-first_label()==size()-1);
 }
 
-string BasicBlock::ccode() {
+string BasicBlock::ccode() const {
     std::stringstream tmp;
     for (auto& inst : instructions) {
         tmp << "  " << inst.ccode() << std::endl;
     }
     return tmp.str();
 }
-string BasicBlock::icode() {
+string BasicBlock::icode() const {
     std::stringstream tmp;
     for (auto& inst : instructions) {
         tmp << inst.icode();
     }
     return tmp.str();
 }
-string BasicBlock::cfg() {
+string BasicBlock::cfg() const {
     std::stringstream tmp;
     tmp << this->instructions.front().label << " ->";
     for (auto suc : successor_labels) {
@@ -62,17 +63,35 @@ void BasicBlock::peephole() {
                 if (next_iter->opcode.type == Opcode::Type::LOAD) {
                     next_iter->opcode.type = Opcode::Type::ASSIGN;
                     next_iter->operands[0] = iter->operands[0];
-                    assert(iter->operands[0].type==Operand::Type::GLOBAL_ADDR);
+                    assert(iter->operands[0].type == Operand::Type::GLOBAL_ADDR);
                     next_iter->operands[0].type = Operand::Type::GLOBAL_VARIABLE;
                     iter->to_nop();
                 } else if (next_iter->opcode.type == Opcode::Type::STORE) {
                     next_iter->opcode.type = Opcode::Type::MOVE;
                     next_iter->operands[1] = iter->operands[0];
-                    assert(iter->operands[0].type==Operand::Type::GLOBAL_ADDR);
+                    assert(iter->operands[0].type == Operand::Type::GLOBAL_ADDR);
                     next_iter->operands[1].type = Operand::Type::GLOBAL_VARIABLE;
                     iter->to_nop();
                 }
             }
         }
+    }
+}
+
+long long BasicBlock::last_label() const {
+    return instructions.back().label;
+}
+
+long long BasicBlock::first_label() const {
+    return instructions.front().label;
+}
+
+long long BasicBlock::size() const {
+    return instructions.size();
+}
+
+void BasicBlock::peephole2(){
+    for(auto & inst:instructions){
+        inst.peephole2();
     }
 }

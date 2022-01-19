@@ -69,8 +69,12 @@ Function::Function(vector<Instruction>& instrs, bool _is_main)
     }
     if (!tmp.empty())
         basic_blocks.emplace_back(tmp);
-        //fixme
-        //this->instructions = instrs;
+
+    for (int i = 0; i < basic_blocks.size(); i++) {
+        idx_of_bb[basic_blocks[i].first_label()] = i;
+    }
+    //fixme
+    //this->instructions = instrs;
 
 #ifdef FUNCTION_DEBUG
     std::cout << "function" << this->id << std::endl;
@@ -85,7 +89,7 @@ Function::Function(vector<Instruction>& instrs, bool _is_main)
 #endif
 }
 
-string Function::ccode() {
+string Function::ccode() const {
     std::stringstream tmp;
     if (is_main) {
         tmp << "void main(";
@@ -151,14 +155,14 @@ void Function::scan_block_leaders(vector<Instruction>& instrs) {
     std::cout << std::endl;
 #endif
 }
-string Function::icode() {
+string Function::icode() const {
     std::stringstream tmp;
     for (auto& bb : basic_blocks) {
         tmp << bb.icode();
     }
     return tmp.str();
 }
-string Function::cfg() {
+string Function::cfg() const {
     std::stringstream tmp;
     tmp << "Function: " << this->id << std::endl;
     tmp << "Basic blocks:";
@@ -171,4 +175,86 @@ string Function::cfg() {
         tmp << bb.cfg();
     }
     return tmp.str();
+}
+void Function::scp() {
+    vector<string> object_def_by_inst{};
+    // The index of all instructions in object_def_by_inst : label - label_0
+    const auto label_0 = basic_blocks.front().first_label();
+    for (const auto& bb : basic_blocks) {
+        for (const auto& inst : bb.instructions) {
+            object_def_by_inst.push_back(inst.get_def());
+        }
+    }
+
+    // gens,kills,globals set of basicblocks;
+    // If there is a function call inside the basic block
+    // F(x) = (GEN(B) - GLOBALS(B)) U (x - KILL(B))
+    // else global will be empty
+    vector<unordered_set<int>> gens, kills, globals;
+    for (auto& bb : basic_blocks) {
+        gens.emplace_back();
+        auto& gen = gens.back();
+        kills.emplace_back();
+        auto& kill = kills.back();
+        globals.emplace_back();
+        auto& global = globals.back();
+        bool consider_global = bb.instructions.back().opcode.type == Opcode::Type::CALL;
+        for (auto& inst : bb.instructions) {
+            if (inst.is_def()) {
+                gen.insert(inst.label);
+                auto object_def = inst.get_def();
+                auto own_idx = inst.label - label_0;  // the index of this instruction in object_def_by_inst
+                for (int i = 0; i < object_def_by_inst.size(); i++) {
+                    if (i == own_idx)
+                        continue;
+                    if (object_def_by_inst[i] == object_def)
+                        kill.insert(i + label_0);
+                }
+                // Only the move instruction will def global variables
+                if (consider_global && inst.opcode.type == Opcode::Type::MOVE && inst.operands.back().type == Operand::Type::GLOBAL_VARIABLE) {
+                    global.insert(inst.label);
+                }
+            }
+        }
+    }
+
+    auto bb_cnt = basic_blocks.size();
+    vector<unordered_set<int>> in(bb_cnt), out(bb_cnt);  // IN set and OUT set of basic blocks
+    deque<int> changed;                                  //blocks changed in the last iteration
+    for (auto i = 0; i < bb_cnt; i++) {
+        changed.push_back(i);
+    }
+
+    while (!changed.empty()) {
+        auto n = changed.front();
+        changed.pop_front();
+        in[n].clear();
+
+        for (auto pre_label : basic_blocks[n].predecessor_labels) {
+            in[n].insert(out[idx_of_bb[pre_label]].begin(), out[idx_of_bb[pre_label]].end());
+        }
+
+        auto out_n_copy = out[n];
+        out[n].clear();
+        // out = gen-global
+        for (auto i : gens[n]) {
+            if (globals[n].count(i) == 0)
+                out[n].insert(i);
+        }
+        // out = out \cup (in-kill)
+        for (auto i : in[n]) {
+            if (kills[n].count(i) == 0)
+                out[n].insert(i);
+        }
+        // if out changed, successor basic blocks' out need to be recomputed
+        if (out_n_copy != out[n]) {
+            for (auto s : basic_blocks[n].successor_labels) {
+                changed.push_back(idx_of_bb[s]);
+            }
+            sort(changed.begin(), changed.end());
+            auto iter = unique(changed.begin(), changed.end());
+            changed.erase(iter, changed.end());
+        }
+    }
+    
 }
