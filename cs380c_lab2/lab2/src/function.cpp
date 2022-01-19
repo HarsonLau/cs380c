@@ -73,6 +73,16 @@ Function::Function(vector<Instruction>& instrs, bool _is_main)
     for (int i = 0; i < basic_blocks.size(); i++) {
         idx_of_bb[basic_blocks[i].first_label()] = i;
     }
+    for (const auto& bb : basic_blocks) {
+        for (auto s : bb.successor_labels) {
+            basic_blocks[idx_of_bb[s]].predecessor_labels.push_back(bb.first_label());
+        }
+    }
+    for (auto& bb : basic_blocks) {
+        sort(bb.predecessor_labels.begin(), bb.predecessor_labels.end());
+        auto iter = unique(bb.predecessor_labels.begin(), bb.predecessor_labels.end());
+        bb.predecessor_labels.erase(iter, bb.predecessor_labels.end());
+    }
     //fixme
     //this->instructions = instrs;
 
@@ -186,7 +196,7 @@ void Function::scp() {
         }
     }
 
-    // gens,kills,globals set of basicblocks;
+    // gens,kills,globals set of basicblocks;(inst label)
     // If there is a function call inside the basic block
     // F(x) = (GEN(B) - GLOBALS(B)) U (x - KILL(B))
     // else global will be empty
@@ -217,10 +227,24 @@ void Function::scp() {
             }
         }
     }
+    /*
+    for(int i=0;i<basic_blocks.size();i++){
+        std::cout<<"gen of bb "<<i<<": ";
+        for(auto j:gens[i]){
+            std::cout<<" "<<j;
+        }
+        std::cout<<std::endl;
 
+        std::cout<<"kill of bb "<<i<<": ";
+        for(auto j:kills[i]){
+            std::cout<<" "<<j;
+        }
+        std::cout<<std::endl;
+    }
+*/
     auto bb_cnt = basic_blocks.size();
-    vector<unordered_set<int>> in(bb_cnt), out(bb_cnt);  // IN set and OUT set of basic blocks
-    deque<int> changed;                                  //blocks changed in the last iteration
+    vector<unordered_set<int>> ins(bb_cnt), outs(bb_cnt);  // IN set and OUT set of basic blocks
+    deque<int> changed;                                    //blocks changed in the last iteration
     for (auto i = 0; i < bb_cnt; i++) {
         changed.push_back(i);
     }
@@ -228,26 +252,32 @@ void Function::scp() {
     while (!changed.empty()) {
         auto n = changed.front();
         changed.pop_front();
-        in[n].clear();
-
+        ins[n].clear();
+        //std::cout<<"predecessors of bb "<<n<<" :"<<basic_blocks[n].predecessor_labels.size();
         for (auto pre_label : basic_blocks[n].predecessor_labels) {
-            in[n].insert(out[idx_of_bb[pre_label]].begin(), out[idx_of_bb[pre_label]].end());
+            ins[n].insert(outs[idx_of_bb[pre_label]].begin(), outs[idx_of_bb[pre_label]].end());
+            // std::cout<<" "<<pre_label;
         }
+        //std::cout<<std::endl;
 
-        auto out_n_copy = out[n];
-        out[n].clear();
+        auto out_n_copy = outs[n];
+        outs[n].clear();
         // out = gen-global
         for (auto i : gens[n]) {
             if (globals[n].count(i) == 0)
-                out[n].insert(i);
+                outs[n].insert(i);
         }
         // out = out \cup (in-kill)
-        for (auto i : in[n]) {
+        for (auto i : ins[n]) {
             if (kills[n].count(i) == 0)
-                out[n].insert(i);
+                outs[n].insert(i);
         }
+        /*
+        std::cout << "size of in " << n <<" :"<< ins[n].size() << std::endl;
+        std::cout << "size of out " << n <<" :"<< outs[n].size() << std::endl;
+        */
         // if out changed, successor basic blocks' out need to be recomputed
-        if (out_n_copy != out[n]) {
+        if (out_n_copy != outs[n]) {
             for (auto s : basic_blocks[n].successor_labels) {
                 changed.push_back(idx_of_bb[s]);
             }
@@ -256,5 +286,69 @@ void Function::scp() {
             changed.erase(iter, changed.end());
         }
     }
-    
+    unordered_map<long long, long long> const_val_of_def;
+    for (const auto& bb : basic_blocks) {
+        for (const auto& inst : bb.instructions) {
+            if (inst.is_constant_def()) {
+                const_val_of_def[inst.label] = inst.const_def_val();
+                // std::cout << "const val of def " << inst.label << " is " << inst.const_def_val() << std::endl;
+            }
+        }
+    }
+    int cnt = 0;
+    for (int i = 0; i < basic_blocks.size(); i++) {
+        const auto& in = ins[i];
+        unordered_set<string> non_constant_variable;
+        unordered_map<string, long long> constant_variable;
+        for (auto j : in) {
+            const auto& variable_name = object_def_by_inst[j - label_0];  //the variable name defed by definition i
+            if (variable_name.size() == 0)
+                continue;
+            if (non_constant_variable.count(variable_name) > 0)
+                continue;
+            if (const_val_of_def.count(j) == 0) {  //this def does not generate constant value
+                non_constant_variable.insert(variable_name);
+            } else {
+                auto constant_value = const_val_of_def[j];  //the definition's const value
+                if (constant_variable.count(variable_name) == 0) {
+                    constant_variable[variable_name] = constant_value;
+                } else {
+                    if (constant_variable[variable_name] != constant_value) {
+                        constant_variable.erase(variable_name);
+                        non_constant_variable.insert(variable_name);
+                    }
+                }
+            }
+        }
+
+        for (auto& inst : basic_blocks[i].instructions) {
+            if (inst.is_def()) {
+                auto tmp_name = object_def_by_inst[inst.label - label_0];
+                if (constant_variable.count(tmp_name) != 0) {
+                    constant_variable.erase(tmp_name);
+                    //std::cout << "erased " << tmp_name << std::endl;
+                }
+            }
+        }
+        /*
+        for (auto& [key, value] : constant_variable) {
+            std::cout << "bb " << i << " " << key << " has value " << value << std::endl;
+        }*/
+
+        for (auto& inst : basic_blocks[i].instructions) {
+            if (inst.opcode.type!=Opcode::Type::ADD&&inst.opcode.type!=Opcode::Type::ASSIGN) {
+                continue;
+            }
+            for (auto& operand : inst.operands) {
+                auto op_variable_name = operand.icode();
+                
+                if (constant_variable.count(op_variable_name) > 0) {
+                    operand.type = Operand::Type::CONSTANT;
+                    operand.constant = constant_variable[op_variable_name];
+                    cnt++;
+                }
+            }
+        }
+    }
+    //std::cout <<std::endl<< cnt << " constant propagated" << std::endl;
 }

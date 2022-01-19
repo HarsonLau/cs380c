@@ -194,6 +194,8 @@ bool Instruction::is_def() const {
 }
 
 bool Instruction::is_constant_def() const {
+    if (!is_def())
+        return false;
     if (opcode.type == Opcode::Type::MOVE || opcode.type == Opcode::Type::ASSIGN) {
         if (operands.front().type == Operand::Type::CONSTANT) {  //the operand is a immediate number
             return true;
@@ -201,7 +203,10 @@ bool Instruction::is_constant_def() const {
     }
     return false;
 }
-
+long long Instruction::const_def_val() const {
+    assert(is_constant_def());
+    return operands.front().constant;
+}
 void Instruction::peephole2() {
     if (operands.size() != 2)
         return;
@@ -239,4 +244,16 @@ void Instruction::peephole2() {
     opcode.type = Opcode::Type::ASSIGN;
     operands[0].constant = n_val;
     operands.resize(1);
+}
+bool Instruction::is_arithmetic() const {
+    switch (opcode.type) {
+        case Opcode::Type::ADD:
+        case Opcode::Type::SUB:
+        case Opcode::Type::MUL:
+        case Opcode::Type::DIV:
+            return true;
+        default:
+            return false;
+    }
+    return false;
 }

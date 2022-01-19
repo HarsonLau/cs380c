@@ -11,7 +11,7 @@ int main() {
     }
     auto program = Program(instructions);
     program.scp();
-    std::cout << program.cfg();
+    std::cout << program.ccode();
 
     return 0;
 }

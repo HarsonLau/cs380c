@@ -2,8 +2,8 @@
 
 # $Id: check-one.sh 818 2007-09-02 17:45:21Z suriya $
 
-C_SUBSET_COMPILER=../src/csc
-THREE_ADDR_TO_C_TRANSLATOR=../3addr-to-c-converter/convert.py
+C_SUBSET_COMPILER=/home/liuhao/cs380c/cs380c_lab1/src/csc
+THREE_ADDR_TO_C_TRANSLATOR=../lab2/build/lab2
 
 [ $# -ne 1 ] && { echo "Usage $0 PROGRAM" >&2; exit 1; }
 

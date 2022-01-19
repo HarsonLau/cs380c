@@ -143,6 +143,8 @@ class Instruction {
     string get_def() const;
     bool is_def() const;
     bool is_constant_def() const;
+    long long const_def_val()const;
+    bool is_arithmetic()const;
 
     // add 1 2 -> assign 3
     void peephole2();
