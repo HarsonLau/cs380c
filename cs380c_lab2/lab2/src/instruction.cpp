@@ -243,6 +243,7 @@ void Instruction::peephole2() {
     }
     opcode.type = Opcode::Type::ASSIGN;
     operands[0].constant = n_val;
+    operands[0].type=Operand::Type::CONSTANT;
     operands.resize(1);
 }
 bool Instruction::is_arithmetic() const {
@@ -251,6 +252,10 @@ bool Instruction::is_arithmetic() const {
         case Opcode::Type::SUB:
         case Opcode::Type::MUL:
         case Opcode::Type::DIV:
+        case Opcode::Type::CMPEQ:
+        case Opcode::Type::CMPLE:
+        case Opcode::Type::CMPLT:
+        case Opcode::Type::ASSIGN:
             return true;
         default:
             return false;

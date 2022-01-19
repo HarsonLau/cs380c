@@ -195,7 +195,8 @@ class Function {
     string ccode() const;
     string icode() const;
     string cfg() const;
-    void scp();  //simple constant propagation using reaching definition analysis
+    int scp();  //simple constant propagation using reaching definition analysis
+    int scp_peephole();
 };
 
 class Program {

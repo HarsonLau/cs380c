@@ -186,7 +186,8 @@ string Function::cfg() const {
     }
     return tmp.str();
 }
-void Function::scp() {
+int Function::scp() {
+    int cnt = 0;
     vector<string> object_def_by_inst{};
     // The index of all instructions in object_def_by_inst : label - label_0
     const auto label_0 = basic_blocks.front().first_label();
@@ -295,19 +296,18 @@ void Function::scp() {
             }
         }
     }
-    int cnt = 0;
     for (int i = 0; i < basic_blocks.size(); i++) {
         const auto& in = ins[i];
         unordered_set<string> non_constant_variable;
         unordered_map<string, long long> constant_variable;
         for (auto j : in) {
             const auto& variable_name = object_def_by_inst[j - label_0];  //the variable name defed by definition i
-            if (variable_name.size() == 0)
-                continue;
+            assert(variable_name.size() > 0);
             if (non_constant_variable.count(variable_name) > 0)
                 continue;
             if (const_val_of_def.count(j) == 0) {  //this def does not generate constant value
                 non_constant_variable.insert(variable_name);
+                constant_variable.erase(variable_name);
             } else {
                 auto constant_value = const_val_of_def[j];  //the definition's const value
                 if (constant_variable.count(variable_name) == 0) {
@@ -321,34 +321,65 @@ void Function::scp() {
             }
         }
 
-        for (auto& inst : basic_blocks[i].instructions) {
-            if (inst.is_def()) {
-                auto tmp_name = object_def_by_inst[inst.label - label_0];
-                if (constant_variable.count(tmp_name) != 0) {
-                    constant_variable.erase(tmp_name);
-                    //std::cout << "erased " << tmp_name << std::endl;
-                }
-            }
-        }
         /*
         for (auto& [key, value] : constant_variable) {
             std::cout << "bb " << i << " " << key << " has value " << value << std::endl;
         }*/
 
         for (auto& inst : basic_blocks[i].instructions) {
-            if (inst.opcode.type!=Opcode::Type::ADD&&inst.opcode.type!=Opcode::Type::ASSIGN) {
+            if (!inst.is_arithmetic()) {
                 continue;
             }
             for (auto& operand : inst.operands) {
                 auto op_variable_name = operand.icode();
-                
                 if (constant_variable.count(op_variable_name) > 0) {
+                    std::cout << "//" << inst.icode() << std::endl;
                     operand.type = Operand::Type::CONSTANT;
                     operand.constant = constant_variable[op_variable_name];
                     cnt++;
+                    //std::cout << "//" << inst.icode() << std::endl;
+                }
+            }
+            if (inst.is_def()) {
+                auto tmp_name = object_def_by_inst[inst.label - label_0];
+                assert(tmp_name == inst.get_def());
+                if (constant_variable.count(tmp_name) != 0) {
+                    if (!inst.is_constant_def()) {
+                        constant_variable.erase(tmp_name);
+                        //std::cout << "//erased " << tmp_name << std::endl;
+                    } else {
+                        if (constant_variable.count(inst.get_def()) > 0) {
+                            if (inst.const_def_val() != constant_variable[inst.get_def()]) {
+                                constant_variable.erase(tmp_name);
+                                //std::cout << "//erased " << tmp_name << std::endl;
+                            }
+                        }
+                    }
+                }else if(inst.is_constant_def()){
+                    constant_variable[inst.get_def()]=inst.const_def_val();
                 }
             }
         }
     }
     //std::cout <<std::endl<< cnt << " constant propagated" << std::endl;
+    return cnt;
+}
+
+int Function::scp_peephole() {
+    int cnt = 0;
+    bool flag=false;
+    while (true) {
+        for (auto& bb : basic_blocks) {
+            for (auto& inst : basic_blocks) {
+                inst.peephole2();
+            }
+        }
+        if(flag)
+            break;
+        int change = scp();
+        if (change == 0)
+            flag=true;
+        cnt += change;
+    }
+    return cnt;
 }

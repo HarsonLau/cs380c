@@ -97,6 +97,6 @@ string Program::cfg() const{
 }
 void Program::scp(){
     for(auto & func:functions){
-        func.scp();
+        func.scp_peephole();
     }
 }
