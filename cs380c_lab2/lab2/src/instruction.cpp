@@ -278,3 +278,49 @@ void Instruction::peephole3() {
 }
 int Instruction::peephole2_cnt = 0;
 int Instruction::peephole3_cnt = 0;
+
+vector<string> Instruction::get_use_dse() const {
+    vector<string> res = {};
+    switch (opcode.type) {
+        case Opcode::Type::ADD:
+        case Opcode::Type::SUB:
+        case Opcode::Type::MUL:
+        case Opcode::Type::DIV:
+        case Opcode::Type::MOD:
+        case Opcode::Type::NEG:
+        case Opcode::Type::CMPEQ:
+        case Opcode::Type::CMPLE:
+        case Opcode::Type::CMPLT:
+        case Opcode::Type::LOAD:
+        case Opcode::Type::STORE:
+        case Opcode::Type::ASSIGN:
+        case Opcode::Type::PARAM:
+        case Opcode::Type::WRITE:
+            for (const auto& op : operands) {
+                if (op.is_local() || op.is_reg()) {
+                    res.push_back(op.icode());
+                }
+            }
+            return res;
+        case Opcode::Type::BLBC:
+        case Opcode::Type::BLBS:
+        case Opcode::Type::MOVE:
+            if (operands[0].is_local() || operands[0].is_reg()) {
+                res.push_back(operands[0].icode());
+            }
+        default:
+            return res;
+    }
+}
+
+string Instruction::get_def_dse()const{
+    if(opcode.type==Opcode::Type::MOVE){
+        if(operands[1].is_local()||operands[1].is_reg()){
+            return operands[1].icode();
+        }
+        return "";
+    }
+    else{
+        return get_def();
+    }
+}

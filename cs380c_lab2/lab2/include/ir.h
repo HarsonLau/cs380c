@@ -62,6 +62,13 @@ class Operand {
     // Read information from a string and build an IR representation
     // Assume that the input string does not contain spaces
     Operand(const string& s, bool is_function = false);
+
+    // local addr or local variable
+    bool is_local()const;
+    // global addr or global variable
+    bool is_global()const;
+    // register
+    bool is_reg()const;
 };
 
 class Opcode {
@@ -141,6 +148,11 @@ class Instruction {
     // set the Instruction to nop
     void to_nop();
     string get_def() const;
+    // For the convenience of dse
+    // Since only defs to local variables and virtual registers can be eliminated 
+    // Only use of local variables and virtual registers are considered
+    vector<string> get_use_dse() const;
+    string get_def_dse()const;
     bool is_def() const;
     bool is_constant_def() const;
     long long const_def_val() const;
@@ -200,8 +212,10 @@ class Function {
     string icode() const;
     string cfg() const;
     int constant_propagated_cnt;  // It is only allowed to be modified by the function scp
-    void scp();                    // simple constant propagation using reaching definition analysis
-    void scp_peephole();
+    void scp();                   // simple constant propagation using reaching definition analysis
+    void scp_peephole();          // Peephole optimization can provide more opportunities for scp
+    void dse();                   // dead statement elimination
+    int statement_eliminated_cnt;
 };
 
 class Program {
@@ -218,5 +232,6 @@ class Program {
     string icode() const;
     string cfg() const;
     void scp();  //simple constant propagation using reaching definition analysis
+    void dse();
 };
 #endif  //IR_H

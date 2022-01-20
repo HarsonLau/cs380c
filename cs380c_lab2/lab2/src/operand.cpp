@@ -14,7 +14,7 @@ map<Operand::Type, string> Operand::type_name = {
     {END, "end"},
     {GLOBAL_ADDR, "global variable address"},
     {PARAMETER, "parameter"},
-    {GLOBAL_VARIABLE,"variable produced by optimization,must be global"}};
+    {GLOBAL_VARIABLE, "variable produced by optimization,must be global"}};
 
 Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0), variable_name("") {
     if (s.find('(') != string::npos) {
@@ -75,7 +75,7 @@ Operand::Operand(const string& s, bool is_function) : type(INVALID), constant(0)
 #endif
 }
 
-string Operand::ccode() const{
+string Operand::ccode() const {
     std::stringstream tmp;
     switch (this->type) {
         case Operand::Type::FP:
@@ -108,7 +108,7 @@ string Operand::ccode() const{
     return tmp.str();
 }
 
-string Operand::icode()const {
+string Operand::icode() const {
     std::stringstream tmp;
     switch (this->type) {
         case Operand::Type::FP:
@@ -141,4 +141,17 @@ string Operand::icode()const {
             return tmp.str();
     }
     return tmp.str();
+}
+bool Operand::is_global() const {
+    if (type == Type::GLOBAL_VARIABLE || type == Type::GLOBAL_ADDR)
+        return true;
+    return false;
+}
+bool Operand::is_local() const {
+    if (type == Type::LOCAL_ADDR || type == Type::LOCAL_VARIABLE)
+        return true;
+    return false;
+}
+bool Operand::is_reg() const {
+    return type == Type::REG;
 }

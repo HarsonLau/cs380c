@@ -18,7 +18,9 @@ BasicBlock::BasicBlock(vector<Instruction>& instrs) : instructions(instrs), pred
 string BasicBlock::ccode() const {
     std::stringstream tmp;
     for (auto& inst : instructions) {
-        tmp << "  " << inst.ccode() << std::endl;
+        auto code =inst.ccode();
+        if(code.size()>0)
+        tmp << "  " << code << std::endl;
     }
     return tmp.str();
 }

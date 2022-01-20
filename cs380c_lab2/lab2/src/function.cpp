@@ -49,7 +49,7 @@ void Function::scan_parameters(vector<Instruction>& instrs) {
 }
 
 Function::Function(vector<Instruction>& instrs, bool _is_main)
-    : is_main(_is_main), id(0), constant_propagated_cnt(0) {
+    : is_main(_is_main), id(0), constant_propagated_cnt(0), statement_eliminated_cnt(0) {
     assert(instrs[0].opcode.type == Opcode::Type::ENTER);
     this->local_var_size = instrs[0].operands[0].constant;
     this->id = instrs[0].label;
@@ -332,7 +332,7 @@ void Function::scp() {
             for (auto& operand : inst.operands) {
                 auto op_variable_name = operand.icode();
                 if (constant_variable.count(op_variable_name) > 0) {
-                    std::cout << "//" << inst.icode() << std::endl;
+                    //std::cout << "//" << inst.icode() << std::endl;
                     operand.type = Operand::Type::CONSTANT;
                     operand.constant = constant_variable[op_variable_name];
                     constant_propagated_cnt++;
@@ -373,9 +373,84 @@ void Function::scp_peephole() {
         }
         if (flag)
             break;
-        auto old_cnt=constant_propagated_cnt;
+        auto old_cnt = constant_propagated_cnt;
         scp();
-        if (constant_propagated_cnt==old_cnt)
+        if (constant_propagated_cnt == old_cnt)
             flag = true;
+    }
+}
+
+// Only consider local variables and virtual registers
+void Function::dse() {
+    vector<unordered_set<string>> defs, uses;
+    for (const auto& bb : basic_blocks) {
+        defs.emplace_back();
+        uses.emplace_back();
+        auto& def = defs.back();
+        auto& use = uses.back();
+        for (const auto& inst : bb.instructions) {
+            for (auto& u : inst.get_use_dse()) {
+                if (u.size() == 0)
+                    continue;
+                if (def.count(u) == 0)
+                    use.insert(u);
+            }
+            auto d = inst.get_def_dse();
+            if (d.size() == 0)
+                continue;
+            if (use.count(d) == 0)
+                def.insert(d);
+        }
+    }
+
+    auto bb_cnt = basic_blocks.size();
+    vector<unordered_set<string>> ins(bb_cnt), outs(bb_cnt);
+    unordered_set<int> changed;
+    for (int i = 0; i < bb_cnt; i++) {
+        changed.insert(i);
+    }
+    while (!changed.empty()) {
+        auto n = *changed.begin();
+        changed.erase(n);
+        outs[n].clear();
+        for (auto s : basic_blocks[n].successor_labels) {
+            int idx_s = idx_of_bb[s];
+            outs[n].insert(ins[idx_s].begin(), ins[idx_s].end());
+        }
+        auto ins_n_copy = ins[n];
+        ins[n].clear();
+
+        //IN = use \cup (Out -def)
+        ins[n].insert(uses[n].begin(), uses[n].end());
+
+        for (auto& s : outs[n]) {
+            if (defs[n].count(s) == 0)
+                ins[n].insert(s);
+        }
+        if (ins[n] != ins_n_copy) {
+            for (auto p : basic_blocks[n].predecessor_labels) {
+                auto idx_p = idx_of_bb[p];
+                changed.insert(idx_p);
+            }
+        }
+    }
+
+    for (int i = 0; i < basic_blocks.size(); i++) {
+        auto& bb = basic_blocks[i];
+        auto live = outs[i];
+        for (auto iter = bb.instructions.rbegin(); iter != bb.instructions.rend(); ++iter) {
+            auto& inst = *iter;
+            for (auto& u : inst.get_use_dse()) {
+                if (u.size() > 0)
+                    live.insert(u);
+            }
+            auto def_of_inst = inst.get_def_dse();
+            if (def_of_inst.size() == 0)
+                continue;
+            if(live.count(def_of_inst)==0){
+                inst.to_nop();
+                statement_eliminated_cnt++;
+            }
+        }
     }
 }

@@ -100,3 +100,8 @@ void Program::scp(){
         func.scp_peephole();
     }
 }
+void Program::dse(){
+    for(auto &func:functions){
+        func.dse();
+    }
+}

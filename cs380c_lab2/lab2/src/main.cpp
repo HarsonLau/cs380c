@@ -11,6 +11,7 @@ int main() {
     }
     auto program = Program(instructions);
     program.scp();
+    program.dse();
     std::cout << program.ccode();
 
     return 0;
