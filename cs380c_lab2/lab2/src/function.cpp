@@ -49,7 +49,7 @@ void Function::scan_parameters(vector<Instruction>& instrs) {
 }
 
 Function::Function(vector<Instruction>& instrs, bool _is_main)
-    : is_main(_is_main), id(0) {
+    : is_main(_is_main), id(0), constant_propagated_cnt(0) {
     assert(instrs[0].opcode.type == Opcode::Type::ENTER);
     this->local_var_size = instrs[0].operands[0].constant;
     this->id = instrs[0].label;
@@ -186,8 +186,7 @@ string Function::cfg() const {
     }
     return tmp.str();
 }
-int Function::scp() {
-    int cnt = 0;
+void Function::scp() {
     vector<string> object_def_by_inst{};
     // The index of all instructions in object_def_by_inst : label - label_0
     const auto label_0 = basic_blocks.front().first_label();
@@ -336,7 +335,7 @@ int Function::scp() {
                     std::cout << "//" << inst.icode() << std::endl;
                     operand.type = Operand::Type::CONSTANT;
                     operand.constant = constant_variable[op_variable_name];
-                    cnt++;
+                    constant_propagated_cnt++;
                     //std::cout << "//" << inst.icode() << std::endl;
                 }
             }
@@ -355,19 +354,16 @@ int Function::scp() {
                             }
                         }
                     }
-                }else if(inst.is_constant_def()){
-                    constant_variable[inst.get_def()]=inst.const_def_val();
+                } else if (inst.is_constant_def()) {
+                    constant_variable[inst.get_def()] = inst.const_def_val();
                 }
             }
         }
     }
-    //std::cout <<std::endl<< cnt << " constant propagated" << std::endl;
-    return cnt;
 }
 
-int Function::scp_peephole() {
-    int cnt = 0;
-    bool flag=false;
+void Function::scp_peephole() {
+    bool flag = false;
     while (true) {
         for (auto& bb : basic_blocks) {
             for (auto& inst : bb.instructions) {
@@ -375,12 +371,11 @@ int Function::scp_peephole() {
                 inst.peephole3();
             }
         }
-        if(flag)
+        if (flag)
             break;
-        int change = scp();
-        if (change == 0)
-            flag=true;
-        cnt += change;
+        auto old_cnt=constant_propagated_cnt;
+        scp();
+        if (constant_propagated_cnt==old_cnt)
+            flag = true;
     }
-    return cnt;
 }

@@ -243,8 +243,9 @@ void Instruction::peephole2() {
     }
     opcode.type = Opcode::Type::ASSIGN;
     operands[0].constant = n_val;
-    operands[0].type=Operand::Type::CONSTANT;
+    operands[0].type = Operand::Type::CONSTANT;
     operands.resize(1);
+    ++peephole2_cnt;
 }
 bool Instruction::is_arithmetic() const {
     switch (opcode.type) {
@@ -262,15 +263,18 @@ bool Instruction::is_arithmetic() const {
     }
     return false;
 }
-void Instruction::peephole3(){
-    if(opcode.type!=Opcode::Type::ADD)
+void Instruction::peephole3() {
+    if (opcode.type != Opcode::Type::ADD)
         return;
-    if(operands[1].type!=Operand::Type::CONSTANT)
+    if (operands[1].type != Operand::Type::CONSTANT)
         return;
-    if(operands[1].constant!=0)
+    if (operands[1].constant != 0)
         return;
-    if(operands[0].type!=Operand::Type::REG)
+    if (operands[0].type != Operand::Type::REG)
         return;
-    opcode.type=Opcode::Type::ASSIGN;
+    opcode.type = Opcode::Type::ASSIGN;
     operands.resize(1);
+    ++peephole3_cnt;
 }
+int Instruction::peephole2_cnt = 0;
+int Instruction::peephole3_cnt = 0;

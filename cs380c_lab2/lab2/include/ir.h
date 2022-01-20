@@ -143,11 +143,13 @@ class Instruction {
     string get_def() const;
     bool is_def() const;
     bool is_constant_def() const;
-    long long const_def_val()const;
-    bool is_arithmetic()const;
+    long long const_def_val() const;
+    bool is_arithmetic() const;
 
+    static int peephole2_cnt;
     // add 1 2 -> assign 3
     void peephole2();
+    static int peephole3_cnt;
     // add (90) 0 -> assign (90)
     void peephole3();
 };
@@ -197,8 +199,9 @@ class Function {
     string ccode() const;
     string icode() const;
     string cfg() const;
-    int scp();  //simple constant propagation using reaching definition analysis
-    int scp_peephole();
+    int constant_propagated_cnt;  // It is only allowed to be modified by the function scp
+    void scp();                    // simple constant propagation using reaching definition analysis
+    void scp_peephole();
 };
 
 class Program {
