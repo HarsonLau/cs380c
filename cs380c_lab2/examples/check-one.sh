@@ -14,7 +14,7 @@ BASENAME=`basename $PROGRAM .c`
 echo $PROGRAM
 ${C_SUBSET_COMPILER} $PROGRAM > ${BASENAME}.3addr
 gcc $PROGRAM -o ${BASENAME}.gcc.bin
-${THREE_ADDR_TO_C_TRANSLATOR} < ${BASENAME}.3addr > ${BASENAME}.3addr.c
+${THREE_ADDR_TO_C_TRANSLATOR} -opt=scp,dse -backend=c < ${BASENAME}.3addr > ${BASENAME}.3addr.c
 gcc ${BASENAME}.3addr.c -o ${BASENAME}.3addr.bin
 ./${BASENAME}.gcc.bin > ${BASENAME}.gcc.txt
 ./${BASENAME}.3addr.bin > ${BASENAME}.3addr.txt

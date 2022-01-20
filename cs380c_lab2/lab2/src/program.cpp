@@ -105,3 +105,15 @@ void Program::dse(){
         func.dse();
     }
 }
+void Program::scp_report()const{
+    for (const auto & func:functions){
+        std::cout<<"Function: "<<func.id<<std::endl;
+        std::cout<<"Number of constants propagated: "<<func.constant_propagated_cnt<<std::endl;
+    }
+}
+void Program::dse_report()const{
+    for (const auto & func:functions){
+        std::cout<<"Function: "<<func.id<<std::endl;
+        std::cout<<"Number of statements eliminated: "<<func.statement_eliminated_cnt<<std::endl;
+    }
+}

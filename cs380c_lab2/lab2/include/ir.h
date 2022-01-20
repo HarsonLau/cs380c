@@ -64,11 +64,11 @@ class Operand {
     Operand(const string& s, bool is_function = false);
 
     // local addr or local variable
-    bool is_local()const;
+    bool is_local() const;
     // global addr or global variable
-    bool is_global()const;
+    bool is_global() const;
     // register
-    bool is_reg()const;
+    bool is_reg() const;
 };
 
 class Opcode {
@@ -149,10 +149,10 @@ class Instruction {
     void to_nop();
     string get_def() const;
     // For the convenience of dse
-    // Since only defs to local variables and virtual registers can be eliminated 
+    // Since only defs to local variables and virtual registers can be eliminated
     // Only use of local variables and virtual registers are considered
     vector<string> get_use_dse() const;
-    string get_def_dse()const;
+    string get_def_dse() const;
     bool is_def() const;
     bool is_constant_def() const;
     long long const_def_val() const;
@@ -233,5 +233,7 @@ class Program {
     string cfg() const;
     void scp();  //simple constant propagation using reaching definition analysis
     void dse();
+    void scp_report() const;
+    void dse_report() const;
 };
 #endif  //IR_H
