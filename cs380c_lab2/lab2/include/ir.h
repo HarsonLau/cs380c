@@ -148,6 +148,8 @@ class Instruction {
 
     // add 1 2 -> assign 3
     void peephole2();
+    // add (90) 0 -> assign (90)
+    void peephole3();
 };
 
 class BasicBlock {

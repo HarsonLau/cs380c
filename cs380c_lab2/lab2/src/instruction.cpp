@@ -262,3 +262,15 @@ bool Instruction::is_arithmetic() const {
     }
     return false;
 }
+void Instruction::peephole3(){
+    if(opcode.type!=Opcode::Type::ADD)
+        return;
+    if(operands[1].type!=Operand::Type::CONSTANT)
+        return;
+    if(operands[1].constant!=0)
+        return;
+    if(operands[0].type!=Operand::Type::REG)
+        return;
+    opcode.type=Opcode::Type::ASSIGN;
+    operands.resize(1);
+}

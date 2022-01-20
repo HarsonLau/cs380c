@@ -370,8 +370,9 @@ int Function::scp_peephole() {
     bool flag=false;
     while (true) {
         for (auto& bb : basic_blocks) {
-            for (auto& inst : basic_blocks) {
+            for (auto& inst : bb.instructions) {
                 inst.peephole2();
+                inst.peephole3();
             }
         }
         if(flag)
